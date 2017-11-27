@@ -1,8 +1,9 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 #include <time.h>
-#define SCREEN_WIDTH 1920
-#define SCREEN_HEIGHT 1080
+#define SCREEN_WIDTH 1024
+#define SCREEN_HEIGHT 600
 
 
 
@@ -10,7 +11,11 @@ SDL_Renderer *renderer = NULL;
 SDL_Window *window = NULL;
 SDL_Texture *texture = NULL;
 SDL_Color textColor = {255, 255, 255, 255};
+SDL_Event evt;
+SDL_Point touchLocation = {-1, 1};
 
+
+TTF_Font *textFont = NULL;
 struct editbox
 {
   int x;
@@ -23,9 +28,22 @@ struct editbox
   char value[5];
 };
 
+int start = 0;
+int cycleCounter = 0;
+
+
+int timestamp = 0;
+int oldtimestamp = 0;
+
+
 int rows = 13;
 int columns = 13;
-struct editbox eb[169];
+
+char buffRows[20];
+char buffColumns[20];
+
+
+struct editbox eb[170];
 
 int editBox_id_counter;
 
@@ -63,8 +81,14 @@ int init()
   renderer = SDL_CreateRenderer(window, - 1, SDL_RENDERER_SOFTWARE);
   if(renderer == NULL)
   {
-    printf("RENDERER IS NULL");
+    printf("RENDERER IS NULL\n");
   }
+
+  if(TTF_Init() == -1)
+  {
+    printf("TTF ERROR\n");
+  }
+  textFont = TTF_OpenFont("BebasNeue Bold.ttf", 60);
   
   return 15;
 }
@@ -123,22 +147,20 @@ void drawTextBox(int i, int x, int y, int w, int h)
     SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
     SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
     SDL_RenderDrawLine(renderer, x, (y+h), x, y);
-    render(eb[i].x, eb[i].y, NULL, 0.0, NULL, SDL_FLIP_NONE);
+   // render(eb[i].x, eb[i].y, NULL, 0.0, NULL, SDL_FLIP_NONE);
   }
   if(eb[i].posX == curX && eb[i].posY == curY)
   {
     SDL_Rect fillRect = {x, y, w, h};	  
-    SDL_SetRenderDrawColor(renderer, 0x110, 0x70, 0x200, 0x70);
+    SDL_SetRenderDrawColor(renderer, 110, 70, 200, 70);
     SDL_RenderFillRect(renderer, &fillRect);
     SDL_RenderDrawLine(renderer, x, y, (x+w), y);
     SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
     SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
     SDL_RenderDrawLine(renderer, x, (y+h), x, y);
-    render(eb[i].x, eb[i].y, NULL, 0.0, NULL, SDL_FLIP_NONE);
+   // render(eb[i].x, eb[i].y, NULL, 0.0, NULL, SDL_FLIP_NONE);
   }  
 }
-
-
 
 
 void drawEbGrid(void)
@@ -146,24 +168,116 @@ void drawEbGrid(void)
   int i;
   
   
-  for(i = 1; i < 170; ++i)
+  for(i = 0; i < 169; ++i)
   {
     drawTextBox(i, eb[i].x, eb[i].y, eb[i].w, eb[i].h);
   }
 }
 
+int writeText(const char *text, SDL_Color textColor)
+{
+ 	
+  SDL_Surface* textSurface;
+  
+  textSurface = TTF_RenderText_Solid(textFont, text, textColor);
+
+  freeTexture();
+
+  if(textSurface == NULL)
+  {
+    printf("Unable to render text surface! SDL Error: %s\n", SDL_GetError());
+  }
+  else
+  {
+    texture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    if(texture == NULL)
+    {
+      printf("Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError());
+    }
+    else
+    {
+      textureWidth = textSurface -> w;
+      textureHeight = textSurface -> h;
+    }
+    SDL_FreeSurface(textSurface);
+  }
+  return texture != NULL;
+}
+
+void drawButton(int x,  int y, int w, int h)
+{
+  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+  SDL_RenderDrawLine(renderer, x, y, (x+w), y);
+  SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
+  SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
+  SDL_RenderDrawLine(renderer, x, (y+h), x, y);
+  writeText("START: ", textColor);
+  render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
+}
+
+
+void eventUpdate()
+{
+  while(SDL_PollEvent(&evt) != 0 )
+  {
+    if(evt.type == SDL_FINGERDOWN)
+    { 
+      timestamp = evt.tfinger.timestamp;
+      touchLocation.x = evt.tfinger.x;
+      touchLocation.y = evt.tfinger.y;
+    } 
+  }
+}
+
+void plusRow()
+{
+  writeText("+", textColor);
+  render(950, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 0 && touchLocation.y < 100)
+  {
+    rows++;
+  } 
+
+}
+
+void minusRow()
+{
+  writeText("-", textColor);
+  render(750, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 0 && touchLocation.y < 100)
+  {
+    rows--;
+  } 
+}
+
+void plusColumn()
+{
+  writeText("+", textColor);
+  render(950, 150, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+}
+
+void minusColumn()
+{
+  writeText("-", textColor);
+  render(750, 150, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+}
+
+
+
+
+
+
 void initVars()
 {
-  int x = 400;
-  int y = 700;
-  int w = 50;
-  int h = 50;
-  editBox_id_counter = 1;
-  int posX = 0;
-  int posy = 0;
-
+  int x = 50;
+  int y = 500;
+  int w = 25;
+  int h = 25;
   int drawRows = 0;
   int drawColumns = 0;
+  int counter = 1;
+  
+  editBox_id_counter = 0;
 
   for(drawRows = 0; drawRows < rows ; ++drawRows)
   {
@@ -176,19 +290,21 @@ void initVars()
       eb[editBox_id_counter].hasFocus = 0;
       eb[editBox_id_counter].posX = drawColumns;
       eb[editBox_id_counter].posY = drawRows;
-      strcpy(eb[editBox_id_counter].value, "0\0");
+      //strcpy(eb[editBox_id_counter].value, "0\0");
       /*printf("ebval[%d]: %s\n", editBox_id_counter, ebVal[editBox_id_counter]); */
-      
+      printf("counter : %d  drawColumns: %d drawRows: %d x: %d y: %d \n", counter, drawColumns, drawRows, x, y);
       editBox_id_counter++;
       x = x + w;
+      counter++;
     }
-    x = 400;
+    x = 50;
     y = y - h;  
   }
-  
-
 }
-//////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 void up()
 {
   curY++;	
@@ -219,21 +335,47 @@ void diagonal()
 int main()
 {
   init();
-  draw();
- 
-  
 
-  initVars();
+  while(!start)
+  {
+    draw();
   
+    eventUpdate(); 
+    writeText("VRSTICE: ", textColor);
+    render(500, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    plusRow();
+    minusRow();
+    plusColumn();
+    minusColumn();
 
+    sprintf(buffRows, "%d", rows);
+    writeText(buffRows, textColor);
+    render(830, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+
+    sprintf(buffColumns, "%d", columns);
+    writeText(buffColumns, textColor);
+    render(830, 150, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+    writeText("STOLPCI: ", textColor);
+    render(500, 150, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  
+    drawButton(500, 300, 500, 100);
+    initVars();
+    drawEbGrid();
+    SDL_RenderPresent(renderer);	
+  }	  
+    
+  
+	  
 
   holes = rows * columns;
   
   dir_move = 1;
   for(i=0;i<holes;++i)
   {
+    SDL_RenderPresent(renderer);	
     drawEbGrid();
-    SDL_RenderPresent(renderer);	  
+      
     if(move_count == 1)
     {
       diagonal();
@@ -302,6 +444,7 @@ int main()
       down();
     }
     move_count++;
-    SDL_Delay(100);
   }
+  SDL_Delay(10000);
+  cycleCounter++;
 }
