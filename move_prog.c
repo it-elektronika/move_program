@@ -111,16 +111,6 @@ void draw(void)
   SDL_RenderClear(renderer);
 }
 
-void close()
-{
-  freeTexture();	
-  
-  SDL_DestroyRenderer(renderer);
-  SDL_DestroyWindow(window);
-
-  SDL_Quit();
-}
-
 void render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip)
 {
   
@@ -218,9 +208,9 @@ void drawButton(int x,  int y, int w, int h)
 
 void eventUpdate()
 {
-  while(SDL_WaitEvent(&event) != 0 )
+  while(SDL_PollEvent(&event) != 0 )
   {
-    printf("X:%d Y:%d\n", event.tfinger.x, event.tfinger.y); 
+    printf("X:%f Y:%f\n", event.tfinger.x, event.tfinger.y); 
     if(event.type == SDL_FINGERDOWN)
     {
       
@@ -228,6 +218,10 @@ void eventUpdate()
       touchLocation.x = event.tfinger.x;
       touchLocation.y = event.tfinger.y;
     } 
+    if(event.type == SDL_QUIT)
+    {
+      start = 1;
+    }
   }
 }
 
@@ -334,30 +328,9 @@ int main()
   
   while(!start)
   {
- //   draw();
-    printf("SDL POLL: %s\n", SDL_WaitEvent(&event));
-    while(SDL_PollEvent(&event) != 0 )
-    {
-      if(event.type == SDL_FINGERDOWN)
-      {
-        timestamp = event.tfinger.timestamp;
-        touchLocation.x = event.tfinger.x;
-        touchLocation.y = event.tfinger.y;
-      }
-      if(event.type == SDL_QUIT)
-      {
-        start = 1;
-      } 
-      if(event.type = SDL_KEYDOWN)
-      {
-        if(event.key.keysym.sym == SDLK_UP)
-        {
-          start = 1;
-        }
-      }
-    
-    }
-    /*eventUpdate(); 
+    draw();
+   
+    eventUpdate(); 
     writeText("VRSTICE: ", textColor);
     render(500, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
     plusRow();
@@ -379,7 +352,8 @@ int main()
     drawButton(500, 300, 500, 100);
     initVars();
     drawEbGrid();
-    SDL_RenderPresent(renderer);*/	
+    SDL_RenderPresent(renderer);	
+    cycleCounter++;
   }	  
     
   
@@ -463,5 +437,18 @@ int main()
     move_count++;
   }
   //SDL_Delay(10000);
-  cycleCounter++;
+ 
+ 
+  SDL_DestroyRenderer(renderer);
+  SDL_DestroyWindow(window);
+  TTF_Quit();
+  SDL_Quit();
+  
 }
+
+
+
+
+
+  
+
