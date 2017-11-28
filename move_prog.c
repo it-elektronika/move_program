@@ -11,8 +11,8 @@ SDL_Renderer *renderer = NULL;
 SDL_Window *window = NULL;
 SDL_Texture *texture = NULL;
 SDL_Color textColor = {255, 255, 255, 255};
-SDL_Event evt;
-SDL_Point touchLocation = {-1, 1};
+SDL_Event event;
+SDL_Point touchLocation = {-1, -1};
 
 
 TTF_Font *textFont = NULL;
@@ -64,14 +64,14 @@ int holes;
 
 int init()
 {  
-  if((SDL_Init(SDL_INIT_VIDEO||SDL_INIT_AUDIO||SDL_INIT_TIMER)) != 0)
+  if((SDL_Init(SDL_INIT_VIDEO||SDL_INIT_EVENTS)) != 0)
   {
     SDL_Log("Unable to initialize SDL:%s ", SDL_GetError());
     return 1;                                                                               
   }  
 
   window = SDL_CreateWindow("IT-Elektronika", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-  SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_BORDERLESS);
+  SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
   
   if (window == NULL)
   {
@@ -218,13 +218,15 @@ void drawButton(int x,  int y, int w, int h)
 
 void eventUpdate()
 {
-  while(SDL_PollEvent(&evt) != 0 )
+  while(SDL_WaitEvent(&event) != 0 )
   {
-    if(evt.type == SDL_FINGERDOWN)
-    { 
-      timestamp = evt.tfinger.timestamp;
-      touchLocation.x = evt.tfinger.x;
-      touchLocation.y = evt.tfinger.y;
+    printf("X:%d Y:%d\n", event.tfinger.x, event.tfinger.y); 
+    if(event.type == SDL_FINGERDOWN)
+    {
+      
+      timestamp = event.tfinger.timestamp;
+      touchLocation.x = event.tfinger.x;
+      touchLocation.y = event.tfinger.y;
     } 
   }
 }
@@ -233,7 +235,7 @@ void plusRow()
 {
   writeText("+", textColor);
   render(950, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 0 && touchLocation.y < 100)
+  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 0 && touchLocation.y < 100 && timestamp > oldtimestamp)
   {
     rows++;
   } 
@@ -244,7 +246,7 @@ void minusRow()
 {
   writeText("-", textColor);
   render(750, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 0 && touchLocation.y < 100)
+  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 0 && touchLocation.y < 100 && timestamp > oldtimestamp)
   {
     rows--;
   } 
@@ -261,10 +263,6 @@ void minusColumn()
   writeText("-", textColor);
   render(750, 150, NULL, 0.0, NULL, SDL_FLIP_NONE); 
 }
-
-
-
-
 
 
 void initVars()
@@ -292,7 +290,7 @@ void initVars()
       eb[editBox_id_counter].posY = drawRows;
       //strcpy(eb[editBox_id_counter].value, "0\0");
       /*printf("ebval[%d]: %s\n", editBox_id_counter, ebVal[editBox_id_counter]); */
-      printf("counter : %d  drawColumns: %d drawRows: %d x: %d y: %d \n", counter, drawColumns, drawRows, x, y);
+     // printf("counter : %d  drawColumns: %d drawRows: %d x: %d y: %d \n", counter, drawColumns, drawRows, x, y);
       editBox_id_counter++;
       x = x + w;
       counter++;
@@ -301,8 +299,6 @@ void initVars()
     y = y - h;  
   }
 }
-
-
 
 
 void up()
@@ -335,12 +331,33 @@ void diagonal()
 int main()
 {
   init();
-
+  
   while(!start)
   {
-    draw();
-  
-    eventUpdate(); 
+ //   draw();
+    printf("SDL POLL: %s\n", SDL_WaitEvent(&event));
+    while(SDL_PollEvent(&event) != 0 )
+    {
+      if(event.type == SDL_FINGERDOWN)
+      {
+        timestamp = event.tfinger.timestamp;
+        touchLocation.x = event.tfinger.x;
+        touchLocation.y = event.tfinger.y;
+      }
+      if(event.type == SDL_QUIT)
+      {
+        start = 1;
+      } 
+      if(event.type = SDL_KEYDOWN)
+      {
+        if(event.key.keysym.sym == SDLK_UP)
+        {
+          start = 1;
+        }
+      }
+    
+    }
+    /*eventUpdate(); 
     writeText("VRSTICE: ", textColor);
     render(500, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
     plusRow();
@@ -362,7 +379,7 @@ int main()
     drawButton(500, 300, 500, 100);
     initVars();
     drawEbGrid();
-    SDL_RenderPresent(renderer);	
+    SDL_RenderPresent(renderer);*/	
   }	  
     
   
@@ -445,6 +462,6 @@ int main()
     }
     move_count++;
   }
-  SDL_Delay(10000);
+  //SDL_Delay(10000);
   cycleCounter++;
 }
