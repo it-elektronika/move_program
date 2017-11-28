@@ -34,16 +34,16 @@ int cycleCounter = 0;
 
 int timestamp = 0;
 int oldtimestamp = 0;
+int menuValueCheck = 0;
 
-
-int rows = 13;
-int columns = 13;
+int rows = 0;
+int columns = 0;
 
 char buffRows[20];
 char buffColumns[20];
 
 
-struct editbox eb[170];
+struct editbox eb[1000];
 
 int editBox_id_counter;
 
@@ -54,7 +54,7 @@ int textureWidth = 0;
 int textureHeight = 0;
 
 int i = 0;
-int move_count = 1;
+int move_count = 0;
 int pattern_move_count = 1;
 int pattern2_move_count = 1;
 
@@ -137,7 +137,6 @@ void drawTextBox(int i, int x, int y, int w, int h)
     SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
     SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
     SDL_RenderDrawLine(renderer, x, (y+h), x, y);
-   // render(eb[i].x, eb[i].y, NULL, 0.0, NULL, SDL_FLIP_NONE);
   }
   if(eb[i].posX == curX && eb[i].posY == curY)
   {
@@ -148,19 +147,38 @@ void drawTextBox(int i, int x, int y, int w, int h)
     SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
     SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
     SDL_RenderDrawLine(renderer, x, (y+h), x, y);
-   // render(eb[i].x, eb[i].y, NULL, 0.0, NULL, SDL_FLIP_NONE);
+    printf("MOVE %d: X:%d Y:%d\n", move_count, eb[i].posX, eb[i].posY);
   }  
 }
 
 
+void drawTextBoxClear(int i, int x, int y, int w, int h)
+{
+  if(eb[i].hasFocus == 0)
+  {
+    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    SDL_RenderDrawLine(renderer, x, y, (x+w), y);
+    SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
+    SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
+    SDL_RenderDrawLine(renderer, x, (y+h), x, y);
+  }
+}
+
 void drawEbGrid(void)
 {
-  int i;
-  
-  
-  for(i = 0; i < 169; ++i)
+  int i; 
+  for(i = 0; i < holes; ++i)
   {
     drawTextBox(i, eb[i].x, eb[i].y, eb[i].w, eb[i].h);
+  }
+}
+
+void drawEbGridClear(void)
+{
+  int i; 
+  for(i = 0; i < holes; ++i)
+  {
+    drawTextBoxClear(i, eb[i].x, eb[i].y, eb[i].w, eb[i].h);
   }
 }
 
@@ -203,17 +221,20 @@ void drawButton(int x,  int y, int w, int h)
   SDL_RenderDrawLine(renderer, x, (y+h), x, y);
   writeText("START: ", textColor);
   render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > x && touchLocation.x < x + w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
+  {
+    start = 1;
+  }
 }
-
 
 void eventUpdate()
 {
   while(SDL_PollEvent(&event) != 0 )
   {
-    printf("X:%f Y:%f\n", event.tfinger.x, event.tfinger.y); 
+    
     if(event.type == SDL_FINGERDOWN)
     {
-      
+      printf("X:%f Y:%f  timestamp: %d  oldtimestamp: %d\n", event.tfinger.x, event.tfinger.y, timestamp, oldtimestamp); 
       timestamp = event.tfinger.timestamp;
       touchLocation.x = event.tfinger.x;
       touchLocation.y = event.tfinger.y;
@@ -240,7 +261,7 @@ void minusRow()
 {
   writeText("-", textColor);
   render(750, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 0 && touchLocation.y < 100 && timestamp > oldtimestamp)
+  if(touchLocation.x > 700 && touchLocation.x < 800 && touchLocation.y > 0 && touchLocation.y < 100 && timestamp > oldtimestamp)
   {
     rows--;
   } 
@@ -250,12 +271,21 @@ void plusColumn()
 {
   writeText("+", textColor);
   render(950, 150, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 100 && touchLocation.y < 200 && timestamp > oldtimestamp)
+  {
+    columns++;
+  } 
 }
+
 
 void minusColumn()
 {
   writeText("-", textColor);
   render(750, 150, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > 700 && touchLocation.x < 800 && touchLocation.y > 100 && touchLocation.y < 200 && timestamp > oldtimestamp)
+  {
+    columns--;
+  } 
 }
 
 
@@ -297,29 +327,30 @@ void initVars()
 
 void up()
 {
-  curY++;	
-  printf("%d:UP\n", move_count);
+  curY++;
+  printf("%d:UP   X:%d Y:%d\n", move_count, curX, curY);
 }
 void down()
 {
   curY--;	
-  printf("%d:DOWN\n", move_count);
+  printf("%d:DOWN   X:%d Y:%d\n", move_count, curX, curY);
 }
 void left()
 {
-  curX--;	
-  printf("%d:LEFT\n", move_count);
+  curX--;
+  printf("%d:LEFT   X:%d Y:%d\n", move_count, curX, curY);
 }
 void right()
 {
   curX++;
-  printf("%d:RIGHT\n", move_count);
+  printf("%d:RIGHT   X:%d Y:%d\n", move_count, curX, curY);	
 }
 void diagonal()
 {
   curX++;
   curY++;
-  printf("%d:DIAGONAL\n", move_count);
+  printf("%d:DIAGONAL   X:%d Y:%d\n", move_count, curX, curY);
+
 }
 
 int main()
@@ -329,7 +360,9 @@ int main()
   while(!start)
   {
     draw();
-   
+    
+    holes = rows * columns;
+
     eventUpdate(); 
     writeText("VRSTICE: ", textColor);
     render(500, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
@@ -353,26 +386,27 @@ int main()
     initVars();
     drawEbGrid();
     SDL_RenderPresent(renderer);	
+    oldtimestamp = timestamp;
     cycleCounter++;
   }	  
     
   
-	  
 
-  holes = rows * columns;
   
+    
   dir_move = 1;
-  for(i=0;i<holes;++i)
+  
+  for(move_count=0;move_count<holes+1;++move_count)
   {
     SDL_RenderPresent(renderer);	
-    drawEbGrid();
-      
-    if(move_count == 1)
+          
+    if(move_count == 0)
     {
       diagonal();
     }
-    else if(move_count < ((columns*2)-2) && move_count != 1)
+    else if(move_count < ((columns*2)-2) && move_count != 0)
     {
+
       switch(pattern_move_count)
       {
         case 1:
@@ -397,11 +431,11 @@ int main()
         pattern_move_count = 1;
       }
     }
-    else if(move_count >= ((columns*2)-2) && move_count < (columns*2))
+    else if(move_count == (columns*2)-2)
     {
       up();
     }
-    else if(move_count >= columns*2 && move_count < ((holes - columns)+1))
+    else if((move_count > (columns*2)-2) && move_count < (holes - columns))
     {
       if(dir_move == 1 && pattern2_move_count < (rows-1))
       {
@@ -430,13 +464,16 @@ int main()
     {
       left();    
     }
-    else if(move_count > (holes - columns) && move_count <= holes)
+    else if(move_count > (holes - columns) && move_count < holes+1)
     {
       down();
     }
-    move_count++;
+    drawEbGrid();
+
   }
-  //SDL_Delay(10000);
+  drawEbGridClear();
+
+  SDL_Delay(10000);
  
  
   SDL_DestroyRenderer(renderer);
