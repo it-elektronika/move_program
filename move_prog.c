@@ -161,7 +161,6 @@ void drawTextBox(int i, int x, int y, int w, int h)
     SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
     SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
     SDL_RenderDrawLine(renderer, x, (y+h), x, y);
-   // render(eb[i].x, eb[i].y, NULL, 0.0, NULL, SDL_FLIP_NONE);
   }
   if(eb[i].posX == curX && eb[i].posY == curY)
   {
@@ -172,7 +171,6 @@ void drawTextBox(int i, int x, int y, int w, int h)
     SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
     SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
     SDL_RenderDrawLine(renderer, x, (y+h), x, y);
-   // render(eb[i].x, eb[i].y, NULL, 0.0, NULL, SDL_FLIP_NONE);
   }  
 }
 
@@ -227,6 +225,11 @@ void drawButton(int x,  int y, int w, int h)
   SDL_RenderDrawLine(renderer, x, (y+h), x, y);
   writeText("START: ", textColor);
   render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
+  {
+    start = 1;
+  }
+
 }
 
 
@@ -306,9 +309,6 @@ void initVars()
       eb[editBox_id_counter].hasFocus = 0;
       eb[editBox_id_counter].posX = drawColumns;
       eb[editBox_id_counter].posY = drawRows;
-      //strcpy(eb[editBox_id_counter].value, "0\0");
-      /*printf("ebval[%d]: %s\n", editBox_id_counter, ebVal[editBox_id_counter]); */
-     // printf("counter : %d  drawColumns: %d drawRows: %d x: %d y: %d \n", counter, drawColumns, drawRows, x, y);
       editBox_id_counter++;
       x = x + w;
       counter++;
@@ -472,83 +472,84 @@ int main()
 
   holes = rows * columns;
   
-  dir_move = 1;
-  for(i=0;i<holes;++i)
-  {
-    SDL_RenderPresent(renderer);	
-    drawEbGrid();
+  void ll_grid()
+  { 
+    dir_move = 1;
+    for(i=0;i<holes;++i)
+    {
+      SDL_RenderPresent(renderer);	
+      drawEbGrid();
       
-    if(move_count == 1)
-    {
-      diagonal();
-    }
-    else if(move_count < ((columns*2)-2) && move_count != 1)
-    {
-      switch(pattern_move_count)
+      if(move_count == 1)
       {
-        case 1:
-	  down();
-	  break;
-	case 2:
-	  right();
-	  break;
-	case 3:
-          up();
-	  break;
-        case 4:
-	  right();
-	  break;
+        diagonal();
       }
-      if(pattern_move_count < 4)
+      else if(move_count < ((columns*2)-2) && move_count != 1)
       {
-        pattern_move_count++;
+        switch(pattern_move_count)
+        {
+          case 1:
+	    down();
+	    break;
+	  case 2:
+	    right();
+	    break;
+	  case 3:
+            up();
+	    break;
+          case 4:
+	    right();
+	    break;
+        }
+        if(pattern_move_count < 4)
+        {
+          pattern_move_count++;
+        }
+        else
+        {
+          pattern_move_count = 1;
+        }
       }
-      else
+      else if(move_count >= ((columns*2)-2) && move_count < (columns*2))
       {
-        pattern_move_count = 1;
+        up();
       }
-    }
-    else if(move_count >= ((columns*2)-2) && move_count < (columns*2))
-    {
-      up();
-    }
-    else if(move_count >= columns*2 && move_count < ((holes - columns)+1))
-    {
-      if(dir_move == 1 && pattern2_move_count < (rows-1))
+      else if(move_count >= columns*2 && move_count < ((holes - columns)+1))
       {
-        left();
-	pattern2_move_count++;
-      }   
-      else if(dir_move == 0 && pattern2_move_count < (rows-1))
-      {
-        right();
-	pattern2_move_count++;
+        if(dir_move == 1 && pattern2_move_count < (rows-1))
+        {
+          left();
+  	  pattern2_move_count++;
+        }   
+        else if(dir_move == 0 && pattern2_move_count < (rows-1))
+        {
+          right();
+	  pattern2_move_count++;
+        }
+        else if(dir_move == 0 && pattern2_move_count == (rows-1))
+        {
+	  up();      
+          dir_move = 1;
+	  pattern2_move_count = 1;
+        }
+        else if(dir_move == 1 && pattern2_move_count == (rows-1))
+        {
+	  up();
+          dir_move = 0;
+	  pattern2_move_count = 1;
+        }
       }
-      else if(dir_move == 0 && pattern2_move_count == (rows-1))
+      else if(move_count == ((holes - columns)+1))
       {
-	up();      
-        dir_move = 1;
-	pattern2_move_count = 1;
+        left();    
       }
-      else if(dir_move == 1 && pattern2_move_count == (rows-1))
+      else if(move_count > (holes - columns) && move_count <= holes)
       {
-	up();
-        dir_move = 0;
-	pattern2_move_count = 1;
+        down();
       }
+      move_count++;
     }
-    else if(move_count == ((holes - columns)+1))
-    {
-      left();    
-    }
-    else if(move_count > (holes - columns) && move_count <= holes)
-    {
-      down();
-    }
-    move_count++;
   }
-  //SDL_Delay(10000);
- 
  
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
