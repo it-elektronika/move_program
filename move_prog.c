@@ -392,9 +392,86 @@ void diagonal()
   printf("%d:DIAGONAL\n", move_count);
 }
 
+void ll_grid()
+{ 
+  dir_move = 1;
+  
+  for(i=0;i<holes;++i)
+  {
+    SDL_RenderPresent(renderer);	
+    drawEbGrid();
+
+    if(move_count == 1)
+    {
+      diagonal();
+    }
+    else if(move_count < ((columns*2)-2) && move_count != 1)
+    {
+      switch(pattern_move_count)
+      {
+        case 1:
+          down();
+          break;
+        case 2:
+          right();
+          break;
+        case 3:
+          up();
+          break;
+        case 4:
+          right();
+          break;
+      }
+      if(pattern_move_count < 4) 
+      {
+        pattern_move_count++;
+      }
+      else
+      {
+        pattern_move_count = 1; 
+      }
+    else if(move_count >= ((columns*2)-2) && move_count < (columns*2))
+    {
+      up();
+    }
+    else if(move_count >= columns*2 && move_count < ((holes - columns)+1))
+    {
+      if(dir_move == 1 && pattern2_move_count < (rows-1))
+      {
+        left();
+        pattern2_move_count++;
+      }   
+     else if(dir_move == 0 && pattern2_move_count < (rows-1))
+     {
+       right();
+       pattern2_move_count++;
+     }
+     else if(dir_move == 0 && pattern2_move_count == (rows-1))
+     {
+       up();      
+       dir_move = 1;
+       pattern2_move_count = 1;
+     }
+     else if(dir_move == 1 && pattern2_move_count == (rows-1))
+     {
+       up();
+       dir_move = 0;
+       pattern2_move_count = 1;
+     }
+     else if(move_count == ((holes - columns)+1))
+     {
+       left();    
+     }
+     else if(move_count > (holes - columns) && move_count <= holes) 
+     {
+       down();
+     }
+  move_count++;
+}
+
 int main()
 {
-
+ 
 
   strcpy(str[0], "I00HT*");
 
@@ -472,84 +549,7 @@ int main()
 
   holes = rows * columns;
   
-  void ll_grid()
-  { 
-    dir_move = 1;
-    for(i=0;i<holes;++i)
-    {
-      SDL_RenderPresent(renderer);	
-      drawEbGrid();
-      
-      if(move_count == 1)
-      {
-        diagonal();
-      }
-      else if(move_count < ((columns*2)-2) && move_count != 1)
-      {
-        switch(pattern_move_count)
-        {
-          case 1:
-	    down();
-	    break;
-	  case 2:
-	    right();
-	    break;
-	  case 3:
-            up();
-	    break;
-          case 4:
-	    right();
-	    break;
-        }
-        if(pattern_move_count < 4)
-        {
-          pattern_move_count++;
-        }
-        else
-        {
-          pattern_move_count = 1;
-        }
-      }
-      else if(move_count >= ((columns*2)-2) && move_count < (columns*2))
-      {
-        up();
-      }
-      else if(move_count >= columns*2 && move_count < ((holes - columns)+1))
-      {
-        if(dir_move == 1 && pattern2_move_count < (rows-1))
-        {
-          left();
-  	  pattern2_move_count++;
-        }   
-        else if(dir_move == 0 && pattern2_move_count < (rows-1))
-        {
-          right();
-	  pattern2_move_count++;
-        }
-        else if(dir_move == 0 && pattern2_move_count == (rows-1))
-        {
-	  up();      
-          dir_move = 1;
-	  pattern2_move_count = 1;
-        }
-        else if(dir_move == 1 && pattern2_move_count == (rows-1))
-        {
-	  up();
-          dir_move = 0;
-	  pattern2_move_count = 1;
-        }
-      }
-      else if(move_count == ((holes - columns)+1))
-      {
-        left();    
-      }
-      else if(move_count > (holes - columns) && move_count <= holes)
-      {
-        down();
-      }
-      move_count++;
-    }
-  }
+  ll_grid();
  
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
