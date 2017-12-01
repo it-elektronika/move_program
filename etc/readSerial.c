@@ -8,8 +8,6 @@
 
 #define MAX_STR_LEN 255
 
-
-
 int setTermiosInterface(int fd, int speed, int parity, int waitTime)
 {
   int isBlockingMode;
@@ -59,33 +57,27 @@ int setTermiosInterface(int fd, int speed, int parity, int waitTime)
   return 0;
 }
 
+
 int main()
 {
-  char sendBuff[MAX_STR_LEN];
+  char readBuff[MAX_STR_LEN];
   int fd;
-  memset(&sendBuff[0], 0, MAX_STR_LEN);
-  snprintf(&sendBuff[0], MAX_STR_LEN, "START");
-  fd = open("/dev/ttyACM0", O_RDWR | O_NOCTTY);
-  if(fd == -1)
+  int i = 0;
+  fd = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);
+  setTermiosInterface(fd,11520, 0, 20);
+  while(1)
   {
-    printf("\n Error opening ttyACM0\n");
+    ssize_t len;
+    memset(&readBuff[0], 0, MAX_STR_LEN);
+    len = read(fd, &readBuff[0], MAX_STR_LEN);
+     
+    for(i = 0; i < len; ++i)
+    { 
+       //if(readBuff[i] == 'S')
+       //{
+       //  printf("S WORD\n");	       
+       //}	       
+       printf("len: %ld, i: %d, %c\n",len,  i, readBuff[i]);
+    }
   }
-  else
-  {
-    printf("\n ttyACM0 Opened Successfully\n");
-  }
-
-  int counter = 0;
-  //while(counter < 100000)
-  //{
-  write(fd, &sendBuff[0], strlen(&sendBuff[0]));
-  //  counter++;
-  //}
 }
-
-
-
-
-
-
-

@@ -2,6 +2,10 @@
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 #include <time.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include "rs232.h"
+
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
 
@@ -61,6 +65,26 @@ int pattern2_move_count = 1;
 int dir_move;
 
 int holes;
+
+
+
+
+int cport_nr=16;        /* /dev/ttyS0 (COM1 on windows) */
+int bdrate=115200;       /* 9600 baud */
+int i;
+int n1;
+int n2;
+int n3;
+int received1 = 0;
+int received2 = 0;
+int received3 = 0;
+char mode[]={'8','N','1',0};
+char str[3][512];
+unsigned char buf1[4096];
+unsigned char buf2[4096];
+unsigned char buf3[4096];
+  
+
 
 int init()
 {  
@@ -297,7 +321,53 @@ void initVars()
 
 void up()
 {
+  printf("UP FUNCTION\n");
   curY++;	
+  RS232_cputs(cport_nr, str[1]);
+  printf("sent: %s\n", str[1]);
+  usleep(1000000);
+  
+  n2 = RS232_PollComport(cport_nr, buf2, 4095);
+  while(received2 == 0)
+  {
+    if(n2 > 0)
+    {
+      buf2[n2] = 0;   /* always put a "null" at the end of a string! */
+
+      for(i=0; i < n2; i++)
+      {
+        if(buf2[i] < 32)  /* replace unreadable control-codes by dots */
+        {
+          buf2[i] = '.';
+        }
+      }
+      printf("received %i bytes: %s\n", n2, (char *)buf2);
+      received2= 1;
+    }
+  }
+
+  RS232_cputs(cport_nr, str[2]);
+  printf("sent: %s\n", str[2]);
+  usleep(1000000);
+ 
+  n3 = RS232_PollComport(cport_nr, buf3, 4095);
+  while(received3 == 0)
+  {
+    if(n3 > 0)
+    {
+      buf3[n3] = 0;   /* always put a "null" at the end of a string! */
+
+      for(i=0; i < n3; i++)
+      {
+        if(buf3[i] < 32)  /* replace unreadable control-codes by dots */
+        {
+          buf3[i] = '.';
+        }
+      }
+      printf("received %i bytes: %s\n", n3, (char *)buf3);
+      received3 = 1;
+    }
+  }
   printf("%d:UP\n", move_count);
 }
 void down()
@@ -324,6 +394,47 @@ void diagonal()
 
 int main()
 {
+
+
+  strcpy(str[0], "I00HT*");
+
+  strcpy(str[1], "I00CY005000.000000000040011110001001*");
+ 
+  strcpy(str[2], "I00SY*");
+
+  if(RS232_OpenComport(cport_nr, bdrate, mode))
+  {
+    printf("Can not open comport\n");
+
+    return(0);
+  }
+ 
+  RS232_cputs(cport_nr, str[0]);
+  
+  printf("sent: %s\n", str[0]);
+  usleep(1000000);
+ 
+  n1 = RS232_PollComport(cport_nr, buf1, 4095);
+  
+  while(received1 == 0)
+  {
+    if(n1 > 0)
+    {
+      buf1[n1] = 0;   /* always put a "null" at the end of a string! */
+
+      for(i=0; i < n1; i++)
+      {
+        if(buf1[i] < 32)  /* replace unreadable control-codes by dots */
+        {
+          buf1[i] = '.';
+        }
+      }
+      printf("received %i bytes: %s\n", n1, (char *)buf1);
+      received1 = 1;
+   }
+  }
+
+
   init();
   
   while(!start)
