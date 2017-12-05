@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "rs232.h"
+#include "func_init.h"
+
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
@@ -29,6 +31,8 @@ struct editbox
   int hasFocus;
   char value[5];
 };
+
+int PiControlHandle_g = -1;
 
 int start = 0;
 int cycleCounter = 0;
@@ -324,6 +328,51 @@ void up()
 {
   curY++;	
   printf("%d:UP\n", move_count);
+  RS232_cputs(cport_nr, str[1]);
+  printf("sent: %s\n", str[1]);
+  usleep(1000000);
+  
+  n2 = RS232_PollComport(cport_nr, buf2, 4095);
+  while(received2 == 0)
+  {
+    if(n2 > 0)
+    {
+      buf2[n2] = 0;   /* always put a "null" at the end of a string! */
+
+      for(i=0; i < n2; i++)
+      {
+        if(buf2[i] < 32)  /* replace unreadable control-codes by dots */
+        {
+          buf2[i] = '.';
+        }
+      }
+      printf("received %i bytes: %s\n", n2, (char *)buf2);
+      received2= 1;
+    }
+  }
+
+  RS232_cputs(cport_nr, str[2]);
+  printf("sent: %s\n", str[2]);
+  usleep(1000000);
+ 
+  n3 = RS232_PollComport(cport_nr, buf3, 4095);
+  while(received3 == 0)
+  {
+    if(n3 > 0)
+    {
+      buf3[n3] = 0;   /* always put a "null" at the end of a string! */
+
+      for(i=0; i < n3; i++)
+      {
+        if(buf3[i] < 32)  /* replace unreadable control-codes by dots */
+        {
+          buf3[i] = '.';
+        }
+      }
+      printf("received %i bytes: %s\n", n3, (char *)buf3);
+      received3 = 1;
+    }
+  }
 }
 void down()
 {
@@ -339,51 +388,55 @@ void right()
 {
   curX++;
   printf("%d:RIGHT\n", move_count);
-  //RS232_cputs(cport_nr, str[1]);
-  //printf("sent: %s\n", str[1]);
-  //usleep(1000000);
+  RS232_cputs(cport_nr, str[1]);
+  printf("sent: %s\n", str[1]);
+  usleep(1000000);
   
-  //n2 = RS232_PollComport(cport_nr, buf2, 4095);
-  //while(received2 == 0)
-  //{
-  //  if(n2 > 0)
-  //  {
-  //    buf2[n2] = 0;   /* always put a "null" at the end of a string! */
+  n2 = RS232_PollComport(cport_nr, buf2, 4095);
+  while(received2 == 0)
+  {
+    if(n2 > 0)
+    {
+      buf2[n2] = 0;   /* always put a "null" at the end of a string! */
 
-    //  for(i=0; i < n2; i++)
-     // {
-      //  if(buf2[i] < 32)  /* replace unreadable control-codes by dots */
-       // {
-        //  buf2[i] = '.';
-       // }
-     // }
-    //  printf("received %i bytes: %s\n", n2, (char *)buf2);
-    //  received2= 1;
-   // }
- // }
+      for(i=0; i < n2; i++)
+      {
+        if(buf2[i] < 32)  /* replace unreadable control-codes by dots */
+        {
+          buf2[i] = '.';
+        }
+      }
+      printf("received %i bytes: %s\n", n2, (char *)buf2);
+      received2= 1;
+    }
+  }
 
- // RS232_cputs(cport_nr, str[2]);
-  //printf("sent: %s\n", str[2]);
- /// usleep(1000000);
+  RS232_cputs(cport_nr, str[2]);
+  printf("sent: %s\n", str[2]);
+  usleep(1000000);
  
-//  n3 = RS232_PollComport(cport_nr, buf3, 4095);
-//  while(received3 == 0)
- // {
-  //  if(n3 > 0)
-  //  {
-    //  buf3[n3] = 0;   /* always put a "null" at the end of a string! */
+  n3 = RS232_PollComport(cport_nr, buf3, 4095);
+  while(received3 == 0)
+  {
+    if(n3 > 0)
+    {
+      buf3[n3] = 0;   /* always put a "null" at the end of a string! */
 
-     // for(i=0; i < n3; i++)
-     // {
-      //  if(buf3[i] < 32)  /* replace unreadable control-codes by dots */
-       // {
-        //  buf3[i] = '.';
-       // }
-     // }
-   //   printf("received %i bytes: %s\n", n3, (char *)buf3);
-     // received3 = 1;
-   // }
- // }
+      for(i=0; i < n3; i++)
+      {
+        if(buf3[i] < 32)  /* replace unreadable control-codes by dots */
+        {
+          buf3[i] = '.';
+        }
+      }
+      printf("received %i bytes: %s\n", n3, (char *)buf3);
+      received3 = 1;
+    }
+  }
+  while(readVariableValue("I_1") == 0)
+  {
+    printf("WAITING FOR SPRING\n");
+  }
 }
 
 void diagonal()
@@ -393,12 +446,43 @@ void diagonal()
   printf("%d:DIAGONAL\n", move_count);
 }
 
+
+void up_button(int x,  int y, int w, int h)
+{
+  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+  SDL_RenderDrawLine(renderer, x, y, (x+w), y);
+  SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
+  SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
+  SDL_RenderDrawLine(renderer, x, (y+h), x, y);
+  writeText("UP ", textColor);
+  render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
+  {
+    up();
+  }
+}
+
+void down_button(int x,  int y, int w, int h)
+{
+  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+  SDL_RenderDrawLine(renderer, x, y, (x+w), y);
+  SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
+  SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
+  SDL_RenderDrawLine(renderer, x, (y+h), x, y);
+  writeText("DOWN", textColor);
+  render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
+  {
+    down();
+  }
+}
 void ll_grid()
 { 
   dir_move = 1;
   
   for(move_count=0;move_count<holes+1;move_count++)
   {
+    printf("%d\n", readVariableValue("I_1"));
     printf("%d\n", move_count);
     draw();	
     drawEbGrid();
@@ -623,6 +707,7 @@ int main()
     draw();
    
     eventUpdate(); 
+   /*
     writeText("VRSTICE: ", textColor);
     render(500, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
     
@@ -641,7 +726,10 @@ int main()
 
     writeText("STOLPCI: ", textColor);
     render(500, 150, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  
+  */
+
+    up_button(700, 50, 100, 100);
+    down_button(700, 150, 100, 100);
     drawButton(500, 300, 500, 100);
    
     initVars();
