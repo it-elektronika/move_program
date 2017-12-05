@@ -9,15 +9,13 @@
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
 
-
-
 SDL_Renderer *renderer = NULL;
 SDL_Window *window = NULL;
 SDL_Texture *texture = NULL;
 SDL_Color textColor = {255, 255, 255, 255};
 SDL_Event event;
 SDL_Point touchLocation = {-1, -1};
-
+SDL_Rect fillRect = {0, 0, 0, 0};
 
 TTF_Font *textFont = NULL;
 struct editbox
@@ -34,40 +32,38 @@ struct editbox
 
 int start = 0;
 int cycleCounter = 0;
-
+int cycleCheck = 0;
 
 int timestamp = 0;
 int oldtimestamp = 0;
-
-
-int rows = 13;
-int columns = 13;
+int rows = 24;
+int columns = 32;
 
 char buffRows[20];
 char buffColumns[20];
 
 
-struct editbox eb[170];
+struct editbox eb[1000];
 
 int editBox_id_counter;
 
 int curX = 0;
 int curY = 0;
 
+char buffX[20];
+char buffY[20];
+char buffCount[20];
 int textureWidth = 0;
 int textureHeight = 0;
 
 int i = 0;
-int move_count = 1;
+int move_count = 0;
 int pattern_move_count = 1;
 int pattern2_move_count = 1;
 
 int dir_move;
 
 int holes;
-
-
-
 
 int cport_nr=16;        /* /dev/ttyS0 (COM1 on windows) */
 int bdrate=115200;       /* 9600 baud */
@@ -83,8 +79,6 @@ char str[3][512];
 unsigned char buf1[4096];
 unsigned char buf2[4096];
 unsigned char buf3[4096];
-  
-
 
 int init()
 {  
@@ -128,7 +122,6 @@ void freeTexture(void)
   }
 }
 
-
 void draw(void)
 {
   SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
@@ -137,7 +130,6 @@ void draw(void)
 
 void render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip)
 {
-  
   SDL_Rect renderQuad;
   renderQuad.x = x;
   renderQuad.y = y;
@@ -180,7 +172,7 @@ void drawEbGrid(void)
   int i;
   
   
-  for(i = 0; i < 169; ++i)
+  for(i = 0; i < holes; ++i)
   {
     drawTextBox(i, eb[i].x, eb[i].y, eb[i].w, eb[i].h);
   }
@@ -229,15 +221,13 @@ void drawButton(int x,  int y, int w, int h)
   {
     start = 1;
   }
-
 }
-
 
 void eventUpdate()
 {
   while(SDL_PollEvent(&event) != 0 )
   {
-    printf("X:%f Y:%f\n", event.tfinger.x, event.tfinger.y); 
+   // printf("X:%f Y:%f\n", event.tfinger.x, event.tfinger.y); 
     if(event.type == SDL_FINGERDOWN)
     {
       
@@ -256,19 +246,20 @@ void plusRow()
 {
   writeText("+", textColor);
   render(950, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 0 && touchLocation.y < 100 && timestamp > oldtimestamp)
+  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 0 && touchLocation.y < 100 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
   {
+    cycleCheck = cycleCounter;
     rows++;
   } 
-
 }
 
 void minusRow()
 {
   writeText("-", textColor);
   render(750, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 0 && touchLocation.y < 100 && timestamp > oldtimestamp)
+  if(touchLocation.x > 700 && touchLocation.x < 800 && touchLocation.y > 0 && touchLocation.y < 100 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
   {
+    cycleCheck = cycleCounter;
     rows--;
   } 
 }
@@ -277,12 +268,22 @@ void plusColumn()
 {
   writeText("+", textColor);
   render(950, 150, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 100 && touchLocation.y < 200 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
+  {
+    cycleCheck = cycleCounter;
+    columns++;
+  }
 }
 
 void minusColumn()
 {
   writeText("-", textColor);
   render(750, 150, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > 700 && touchLocation.x < 800 && touchLocation.y > 100 && touchLocation.y < 200 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
+  {
+    cycleCheck = cycleCounter;
+    columns--;
+  }
 }
 
 
@@ -290,8 +291,8 @@ void initVars()
 {
   int x = 50;
   int y = 500;
-  int w = 25;
-  int h = 25;
+  int w = 10;
+  int h = 10;
   int drawRows = 0;
   int drawColumns = 0;
   int counter = 1;
@@ -321,53 +322,7 @@ void initVars()
 
 void up()
 {
-  printf("UP FUNCTION\n");
   curY++;	
-  RS232_cputs(cport_nr, str[1]);
-  printf("sent: %s\n", str[1]);
-  usleep(1000000);
-  
-  n2 = RS232_PollComport(cport_nr, buf2, 4095);
-  while(received2 == 0)
-  {
-    if(n2 > 0)
-    {
-      buf2[n2] = 0;   /* always put a "null" at the end of a string! */
-
-      for(i=0; i < n2; i++)
-      {
-        if(buf2[i] < 32)  /* replace unreadable control-codes by dots */
-        {
-          buf2[i] = '.';
-        }
-      }
-      printf("received %i bytes: %s\n", n2, (char *)buf2);
-      received2= 1;
-    }
-  }
-
-  RS232_cputs(cport_nr, str[2]);
-  printf("sent: %s\n", str[2]);
-  usleep(1000000);
- 
-  n3 = RS232_PollComport(cport_nr, buf3, 4095);
-  while(received3 == 0)
-  {
-    if(n3 > 0)
-    {
-      buf3[n3] = 0;   /* always put a "null" at the end of a string! */
-
-      for(i=0; i < n3; i++)
-      {
-        if(buf3[i] < 32)  /* replace unreadable control-codes by dots */
-        {
-          buf3[i] = '.';
-        }
-      }
-      printf("received %i bytes: %s\n", n3, (char *)buf3);
-      received3 = 1;
-    }
-  }
   printf("%d:UP\n", move_count);
 }
 void down()
@@ -384,7 +339,53 @@ void right()
 {
   curX++;
   printf("%d:RIGHT\n", move_count);
+  //RS232_cputs(cport_nr, str[1]);
+  //printf("sent: %s\n", str[1]);
+  //usleep(1000000);
+  
+  //n2 = RS232_PollComport(cport_nr, buf2, 4095);
+  //while(received2 == 0)
+  //{
+  //  if(n2 > 0)
+  //  {
+  //    buf2[n2] = 0;   /* always put a "null" at the end of a string! */
+
+    //  for(i=0; i < n2; i++)
+     // {
+      //  if(buf2[i] < 32)  /* replace unreadable control-codes by dots */
+       // {
+        //  buf2[i] = '.';
+       // }
+     // }
+    //  printf("received %i bytes: %s\n", n2, (char *)buf2);
+    //  received2= 1;
+   // }
+ // }
+
+ // RS232_cputs(cport_nr, str[2]);
+  //printf("sent: %s\n", str[2]);
+ /// usleep(1000000);
+ 
+//  n3 = RS232_PollComport(cport_nr, buf3, 4095);
+//  while(received3 == 0)
+ // {
+  //  if(n3 > 0)
+  //  {
+    //  buf3[n3] = 0;   /* always put a "null" at the end of a string! */
+
+     // for(i=0; i < n3; i++)
+     // {
+      //  if(buf3[i] < 32)  /* replace unreadable control-codes by dots */
+       // {
+        //  buf3[i] = '.';
+       // }
+     // }
+   //   printf("received %i bytes: %s\n", n3, (char *)buf3);
+     // received3 = 1;
+   // }
+ // }
 }
+
 void diagonal()
 {
   curX++;
@@ -396,16 +397,32 @@ void ll_grid()
 { 
   dir_move = 1;
   
-  for(i=0;i<holes;++i)
+  for(move_count=0;move_count<holes+1;move_count++)
   {
-    SDL_RenderPresent(renderer);	
+    printf("%d\n", move_count);
+    draw();	
     drawEbGrid();
+    
+    sprintf(buffCount, "N:%d", move_count);
+    writeText(buffCount, textColor);
+    render(500, 350, NULL, 0.0, NULL, SDL_FLIP_NONE);
 
-    if(move_count == 1)
+    sprintf(buffX, "X:%d", curX);
+    writeText(buffX, textColor);
+    render(500, 400, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+    sprintf(buffY, "Y:%d", curY);
+    writeText(buffY, textColor);
+    render(500, 450, NULL, 0.0, NULL, SDL_FLIP_NONE);
+    
+    SDL_RenderPresent(renderer);
+    SDL_RenderClear(renderer);
+    SDL_Delay(1);
+    if(move_count == 0)
     {
       diagonal();
     }
-    else if(move_count < ((columns*2)-2) && move_count != 1)
+    else if(move_count < ((columns*2)-2) && move_count != 0)
     {
       switch(pattern_move_count)
       {
@@ -417,6 +434,7 @@ void ll_grid()
           break;
         case 3:
           up();
+          
           break;
         case 4:
           right();
@@ -430,48 +448,134 @@ void ll_grid()
       {
         pattern_move_count = 1; 
       }
-    else if(move_count >= ((columns*2)-2) && move_count < (columns*2))
+    }
+    else if(move_count >= ((columns*2)-2) && move_count < ((columns*2)-1))
     {
       up();
     }
-    else if(move_count >= columns*2 && move_count < ((holes - columns)+1))
+    else if(move_count >= ((columns*2)-1) && move_count < ((holes - rows)))
     {
-      if(dir_move == 1 && pattern2_move_count < (rows-1))
+      if(dir_move == 1 && pattern2_move_count < columns-1)
       {
         left();
         pattern2_move_count++;
       }   
-     else if(dir_move == 0 && pattern2_move_count < (rows-1))
-     {
-       right();
-       pattern2_move_count++;
-     }
-     else if(dir_move == 0 && pattern2_move_count == (rows-1))
-     {
-       up();      
-       dir_move = 1;
-       pattern2_move_count = 1;
-     }
-     else if(dir_move == 1 && pattern2_move_count == (rows-1))
-     {
-       up();
-       dir_move = 0;
-       pattern2_move_count = 1;
-     }
-     else if(move_count == ((holes - columns)+1))
-     {
-       left();    
-     }
-     else if(move_count > (holes - columns) && move_count <= holes) 
-     {
-       down();
-     }
-  move_count++;
+      else if(dir_move == 0 && pattern2_move_count < columns-1)
+      {
+        right();
+        pattern2_move_count++;
+      }
+      else if(dir_move == 0 && pattern2_move_count == columns-1 && move_count != (holes-rows))
+      {
+        up();      
+        dir_move = 1;
+        pattern2_move_count = 1;
+      }
+      else if(dir_move == 1 && pattern2_move_count == columns-1  && move_count != (holes-rows))
+      {
+        up();
+        dir_move = 0;
+        pattern2_move_count = 1;
+      }
+    }
+    else if(move_count == ((holes - rows)))
+    {
+      left();    
+    }
+    else if(move_count > (holes - rows) && move_count <= holes) 
+    {
+      printf("%d <= %d \n", move_count, holes);
+      down();
+    }
+    else
+    {
+      printf("---------------------------------%d------NO MOVE ---------------------------------------------\n", move_count);
+    }
+
+  }
+}
+
+void ss_grid()
+{ 
+  dir_move = 0;
+  printf("SS GRID\n");
+
+  for(move_count=0;move_count<holes+1;++move_count)
+  {
+    //printf("SS GRID - for loop beggining)\n");
+    printf("**************\n");
+    printf("%d\n", move_count);
+    draw();	
+    drawEbGrid();
+    
+    sprintf(buffCount, "N:%d", move_count);
+    writeText(buffCount, textColor);
+    render(500, 350, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+    sprintf(buffX, "X:%d", curX);
+    writeText(buffX, textColor);
+    render(500, 400, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+    sprintf(buffY, "Y:%d", curY);
+    writeText(buffY, textColor);
+    render(500, 450, NULL, 0.0, NULL, SDL_FLIP_NONE);
+    
+    SDL_RenderPresent(renderer);
+    SDL_RenderClear(renderer);
+    SDL_Delay(1);
+    if(move_count < columns-1)
+    {
+      right();
+    }
+    else if(move_count == columns-1)
+    {
+      up();
+    }
+    else if(move_count > columns-1 && move_count < ((holes - rows)))
+    {
+     // printf("SS GRID - first else if: move_count:%d  pattern_move_count: %d  columns: %d dir_move: %d\n", move_count, pattern2_move_count, columns, dir_move);
+
+      if(dir_move == 0 && pattern2_move_count < columns-1)
+      {
+        left();
+        pattern2_move_count++;
+      }   
+      else if(dir_move == 1 && pattern2_move_count < columns-1)
+      {
+        right();
+        pattern2_move_count++;
+      }
+      else if(dir_move == 0 && pattern2_move_count == columns-1 && move_count != (holes - rows))
+      {
+        up();      
+        dir_move = 1;
+        pattern2_move_count = 1;
+      }
+      else if(dir_move == 1 && pattern2_move_count == columns-1 && move_count != (holes - rows))
+      {
+        up();
+        dir_move = 0;
+        pattern2_move_count = 1;
+      }
+    }
+    else if(move_count == ((holes - rows)))
+    {
+ //     printf("SS GRID - second else if\n");
+      left();    
+    }
+    else if(move_count > (holes - rows) && move_count <= holes) 
+    {
+   //   printf("SS GRID - third else if\n");
+      down();
+    }
+  }
 }
 
 int main()
 {
- 
+  printf("**************\n");
+  printf("MOVE PROGRAM\n");
+  SDL_Delay(2000);
 
   strcpy(str[0], "I00HT*");
 
@@ -508,7 +612,7 @@ int main()
       }
       printf("received %i bytes: %s\n", n1, (char *)buf1);
       received1 = 1;
-   }
+    }
   }
 
 
@@ -521,6 +625,7 @@ int main()
     eventUpdate(); 
     writeText("VRSTICE: ", textColor);
     render(500, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
     plusRow();
     minusRow();
     plusColumn();
@@ -538,29 +643,30 @@ int main()
     render(500, 150, NULL, 0.0, NULL, SDL_FLIP_NONE); 
   
     drawButton(500, 300, 500, 100);
+   
     initVars();
+    holes = rows * columns;
     drawEbGrid();
     SDL_RenderPresent(renderer);	
     cycleCounter++;
-  }	  
-    
-  
-	  
-
+    oldtimestamp = timestamp;
+  }	  	  
   holes = rows * columns;
-  
-  ll_grid();
- 
+  if(rows%2==0 && columns%2==0)
+  {
+    printf("SODO\n");
+    ss_grid();
+  }
+  else
+  {
+    printf("LIHO\n");
+    ll_grid();
+  }
+  SDL_Delay(5000);
+
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   TTF_Quit();
-  SDL_Quit();
-  
+  SDL_Quit(); 
+  return 1;
 }
-
-
-
-
-
-  
-
