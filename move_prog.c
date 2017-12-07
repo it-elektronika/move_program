@@ -17,7 +17,6 @@ SDL_Texture *texture = NULL;
 SDL_Color textColor = {255, 255, 255, 255};
 SDL_Event event;
 SDL_Point touchLocation = {-1, -1};
-SDL_Rect fillRect = {0, 0, 0, 0};
 
 TTF_Font *textFont = NULL;
 struct editbox
@@ -43,12 +42,13 @@ int oldtimestamp = 0;
 int rows = 24;
 int columns = 32;
 
+
+char passText[5];
 char buffRows[20];
 char buffColumns[20];
-
+char numBuff[10];
 
 struct editbox eb[1000];
-
 int editBox_id_counter;
 
 int curX = 0;
@@ -72,17 +72,13 @@ int holes;
 int cport_nr=16;        /* /dev/ttyS0 (COM1 on windows) */
 int bdrate=115200;       /* 9600 baud */
 int i;
-int n1;
-int n2;
-int n3;
-int received1 = 0;
-int received2 = 0;
-int received3 = 0;
+int n;
+int received = 0;
 char mode[]={'8','N','1',0};
-char str[3][512];
-unsigned char buf1[4096];
-unsigned char buf2[4096];
-unsigned char buf3[4096];
+char str[4][512];
+unsigned char buf[4096];
+
+int pageNumber;
 
 int init()
 {  
@@ -93,7 +89,7 @@ int init()
   }  
 
   window = SDL_CreateWindow("IT-Elektronika", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-  SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+  SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_BORDERLESS);
   
   if (window == NULL)
   {
@@ -231,7 +227,6 @@ void eventUpdate()
 {
   while(SDL_PollEvent(&event) != 0 )
   {
-   // printf("X:%f Y:%f\n", event.tfinger.x, event.tfinger.y); 
     if(event.type == SDL_FINGERDOWN)
     {
       
@@ -291,12 +286,8 @@ void minusColumn()
 }
 
 
-void initVars()
+void initVars(int x, int y, int w, int h)
 {
-  int x = 50;
-  int y = 500;
-  int w = 10;
-  int h = 10;
   int drawRows = 0;
   int drawColumns = 0;
   int counter = 1;
@@ -323,56 +314,41 @@ void initVars()
   }
 }
 
+void command(int number)
+{
+  RS232_cputs(cport_nr, str[number]);
+  received = 0;
+  printf("sent: %s\n", str[number]);
+  usleep(100000);
+  
+  n = RS232_PollComport(cport_nr, buf, 4095);
+  while(received == 0)
+  {
+    if(n > 0)
+    {
+      buf[n] = 0;   /* always put a "null" at the end of a string! */
+
+      for(i=0; i < n; i++)
+      {
+        if(buf[i] < 32)  /* replace unreadable control-codes by dots */
+        {
+          buf[i] = '.';
+        }
+      }
+      printf("received %i bytes: %s\n", n, (char *)buf);
+      received = 1;
+    }
+  }
+}
+
 
 void up()
 {
   curY++;	
   printf("%d:UP\n", move_count);
-  RS232_cputs(cport_nr, str[1]);
-  printf("sent: %s\n", str[1]);
-  usleep(1000000);
-  
-  n2 = RS232_PollComport(cport_nr, buf2, 4095);
-  while(received2 == 0)
-  {
-    if(n2 > 0)
-    {
-      buf2[n2] = 0;   /* always put a "null" at the end of a string! */
-
-      for(i=0; i < n2; i++)
-      {
-        if(buf2[i] < 32)  /* replace unreadable control-codes by dots */
-        {
-          buf2[i] = '.';
-        }
-      }
-      printf("received %i bytes: %s\n", n2, (char *)buf2);
-      received2= 1;
-    }
-  }
-
-  RS232_cputs(cport_nr, str[2]);
-  printf("sent: %s\n", str[2]);
-  usleep(1000000);
- 
-  n3 = RS232_PollComport(cport_nr, buf3, 4095);
-  while(received3 == 0)
-  {
-    if(n3 > 0)
-    {
-      buf3[n3] = 0;   /* always put a "null" at the end of a string! */
-
-      for(i=0; i < n3; i++)
-      {
-        if(buf3[i] < 32)  /* replace unreadable control-codes by dots */
-        {
-          buf3[i] = '.';
-        }
-      }
-      printf("received %i bytes: %s\n", n3, (char *)buf3);
-      received3 = 1;
-    }
-  }
+  /*
+  command(1);
+  command(2);*/
 }
 void down()
 {
@@ -388,55 +364,11 @@ void right()
 {
   curX++;
   printf("%d:RIGHT\n", move_count);
-  RS232_cputs(cport_nr, str[1]);
-  printf("sent: %s\n", str[1]);
-  usleep(1000000);
-  
-  n2 = RS232_PollComport(cport_nr, buf2, 4095);
-  while(received2 == 0)
-  {
-    if(n2 > 0)
-    {
-      buf2[n2] = 0;   /* always put a "null" at the end of a string! */
-
-      for(i=0; i < n2; i++)
-      {
-        if(buf2[i] < 32)  /* replace unreadable control-codes by dots */
-        {
-          buf2[i] = '.';
-        }
-      }
-      printf("received %i bytes: %s\n", n2, (char *)buf2);
-      received2= 1;
-    }
-  }
-
-  RS232_cputs(cport_nr, str[2]);
-  printf("sent: %s\n", str[2]);
-  usleep(1000000);
- 
-  n3 = RS232_PollComport(cport_nr, buf3, 4095);
-  while(received3 == 0)
-  {
-    if(n3 > 0)
-    {
-      buf3[n3] = 0;   /* always put a "null" at the end of a string! */
-
-      for(i=0; i < n3; i++)
-      {
-        if(buf3[i] < 32)  /* replace unreadable control-codes by dots */
-        {
-          buf3[i] = '.';
-        }
-      }
-      printf("received %i bytes: %s\n", n3, (char *)buf3);
-      received3 = 1;
-    }
-  }
+  /*
   while(readVariableValue("I_1") == 0)
   {
     printf("WAITING FOR SPRING\n");
-  }
+  }*/
 }
 
 void diagonal()
@@ -476,10 +408,123 @@ void down_button(int x,  int y, int w, int h)
     down();
   }
 }
+
+void left_button(int x,  int y, int w, int h)
+{
+  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+  SDL_RenderDrawLine(renderer, x, y, (x+w), y);
+  SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
+  SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
+  SDL_RenderDrawLine(renderer, x, (y+h), x, y);
+  writeText("LEFT", textColor);
+  render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
+  {
+    left();
+  }
+}
+
+void right_button(int x,  int y, int w, int h)
+{
+  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+  SDL_RenderDrawLine(renderer, x, y, (x+w), y);
+  SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
+  SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
+  SDL_RenderDrawLine(renderer, x, (y+h), x, y);
+  writeText("RIGHT", textColor);
+  render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
+  {
+    right();
+  }
+}
+
+void keypad(int x, int y, int w, int h)
+{
+  int i = 1;
+  int j = 1;
+  int k = 0;
+  int nums = 1;
+  int origX = x;
+  int origY = y;
+  
+  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+  SDL_RenderDrawLine(renderer, x, y-h, (x+w*3), y-h);
+  SDL_RenderDrawLine(renderer, (x+w*3), y-h, (x+w*3), y); 
+  SDL_RenderDrawLine(renderer, (x+w*3), y, x, y);
+  SDL_RenderDrawLine(renderer, x, y, x, y-h);
+  writeText(passText, textColor);
+  render(x, y - h , NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  
+  for(k = 0; k < 5; ++k)
+  {
+    printf("pass text: %c\n", passText[k]);
+  } 
+
+  for(j = 1; j < 4; ++j)
+  {  
+    for(i = 1; i < 4; ++i)
+    {
+      SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+      SDL_RenderDrawLine(renderer, x, y, (x+w), y);
+      SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
+      SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
+      SDL_RenderDrawLine(renderer, x, (y+h), x, y);
+      sprintf(numBuff, "%d", nums);
+      writeText(numBuff, textColor);
+      render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
+      if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp && cycleCheck != cycleCounter)
+      {
+        cycleCheck = cycleCounter;
+        if(passText[4] == NULL)
+        {
+          strcat(passText, numBuff);
+        }
+        else
+        {
+          int ret;
+          ret = strcmp("54321", passText);
+          if(ret == 0)
+          printf("RET: %d\n", ret);
+          {
+            printf("ACCESS GRANTED");
+            pageNumber = 3;
+          }
+          memset(&passText[0], 0, 5);
+        }
+      }
+      x = x + w;
+      nums++;
+    }
+    x = origX;
+    y = y + h;
+  }
+  y = origY;
+}
+
+
+void admin(int x, int y, int w, int h, int gotoNum)
+{
+  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+  SDL_RenderDrawLine(renderer, x, y, (x+w), y);
+  SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
+  SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
+  SDL_RenderDrawLine(renderer, x, (y+h), x, y);
+  writeText(" . . . ", textColor);
+  render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
+
+  if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp && cycleCounter != cycleCheck)
+  {
+    cycleCheck = cycleCounter;
+    pageNumber = gotoNum;
+  }
+}
+
 void ll_grid()
 { 
   dir_move = 1;
-  
+  pattern_move_count = 1;
+  pattern2_move_count = 1;
   for(move_count=0;move_count<holes+1;move_count++)
   {
     printf("%d\n", readVariableValue("I_1"));
@@ -582,11 +627,11 @@ void ll_grid()
 void ss_grid()
 { 
   dir_move = 0;
+  pattern2_move_count = 1;
   printf("SS GRID\n");
 
-  for(move_count=0;move_count<holes+1;++move_count)
+  for(move_count=0;move_count<holes;++move_count)
   {
-    //printf("SS GRID - for loop beggining)\n");
     printf("**************\n");
     printf("%d\n", move_count);
     draw();	
@@ -594,19 +639,27 @@ void ss_grid()
     
     sprintf(buffCount, "N:%d", move_count);
     writeText(buffCount, textColor);
-    render(500, 350, NULL, 0.0, NULL, SDL_FLIP_NONE);
+    render(750, 400, NULL, 0.0, NULL, SDL_FLIP_NONE);
 
     sprintf(buffX, "X:%d", curX);
     writeText(buffX, textColor);
-    render(500, 400, NULL, 0.0, NULL, SDL_FLIP_NONE);
+    render(750, 450, NULL, 0.0, NULL, SDL_FLIP_NONE);
 
     sprintf(buffY, "Y:%d", curY);
     writeText(buffY, textColor);
-    render(500, 450, NULL, 0.0, NULL, SDL_FLIP_NONE);
+    render(750, 500, NULL, 0.0, NULL, SDL_FLIP_NONE);
     
+    sprintf(buffRows, "VRSTICE:%d", rows);
+    writeText(buffRows, textColor);
+    render(750, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+    sprintf(buffColumns, "STOLPCI:%d", columns);
+    writeText(buffColumns, textColor);
+    render(750, 200, NULL, 0.0, NULL, SDL_FLIP_NONE);
+   
     SDL_RenderPresent(renderer);
     SDL_RenderClear(renderer);
-    SDL_Delay(1);
+    
     if(move_count < columns-1)
     {
       right();
@@ -617,7 +670,6 @@ void ss_grid()
     }
     else if(move_count > columns-1 && move_count < ((holes - rows)))
     {
-     // printf("SS GRID - first else if: move_count:%d  pattern_move_count: %d  columns: %d dir_move: %d\n", move_count, pattern2_move_count, columns, dir_move);
 
       if(dir_move == 0 && pattern2_move_count < columns-1)
       {
@@ -644,29 +696,30 @@ void ss_grid()
     }
     else if(move_count == ((holes - rows)))
     {
- //     printf("SS GRID - second else if\n");
       left();    
     }
     else if(move_count > (holes - rows) && move_count <= holes) 
     {
-   //   printf("SS GRID - third else if\n");
       down();
     }
+    printf("X: %d  Y: %d DIRECTION: %d \n", curX, curY, dir_move);
   }
 }
 
-int main()
-{
-  printf("**************\n");
-  printf("MOVE PROGRAM\n");
-  SDL_Delay(2000);
 
+
+int page_main()
+{
+  printf("PAGE MAIN\n");
+  
   strcpy(str[0], "I00HT*");
 
   strcpy(str[1], "I00CY005000.000000000040011110001001*");
  
   strcpy(str[2], "I00SY*");
 
+  strcpy(str[3], "I00KY1*");
+/*
   if(RS232_OpenComport(cport_nr, bdrate, mode))
   {
     printf("Can not open comport\n");
@@ -674,84 +727,118 @@ int main()
     return(0);
   }
  
-  RS232_cputs(cport_nr, str[0]);
-  
-  printf("sent: %s\n", str[0]);
-  usleep(1000000);
- 
-  n1 = RS232_PollComport(cport_nr, buf1, 4095);
-  
-  while(received1 == 0)
+  command(0); 
+*/
+  while(!start && pageNumber == 1)
   {
-    if(n1 > 0)
-    {
-      buf1[n1] = 0;   /* always put a "null" at the end of a string! */
-
-      for(i=0; i < n1; i++)
-      {
-        if(buf1[i] < 32)  /* replace unreadable control-codes by dots */
-        {
-          buf1[i] = '.';
-        }
-      }
-      printf("received %i bytes: %s\n", n1, (char *)buf1);
-      received1 = 1;
-    }
-  }
-
-
-  init();
-  
-  while(!start)
-  {
+    printf("PAGE MAIN - not start loop pageNumber: %d\n", pageNumber);
     draw();
-   
     eventUpdate(); 
-   /*
-    writeText("VRSTICE: ", textColor);
-    render(500, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-    
-    plusRow();
-    minusRow();
-    plusColumn();
-    minusColumn();
-
-    sprintf(buffRows, "%d", rows);
-    writeText(buffRows, textColor);
-    render(830, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-
-    sprintf(buffColumns, "%d", columns);
-    writeText(buffColumns, textColor);
-    render(830, 150, NULL, 0.0, NULL, SDL_FLIP_NONE);
-
-    writeText("STOLPCI: ", textColor);
-    render(500, 150, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  */
-
-    up_button(700, 50, 100, 100);
-    down_button(700, 150, 100, 100);
-    drawButton(500, 300, 500, 100);
-   
-    initVars();
+    initVars(50, 550, 20, 20);
     holes = rows * columns;
     drawEbGrid();
-    SDL_RenderPresent(renderer);	
+    
+    admin(945, 0, 75, 50, 2);
+    
+    sprintf(buffCount, "N:%d", move_count);
+    writeText(buffCount, textColor);
+    render(750, 400, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+    sprintf(buffX, "X:%d", curX);
+    writeText(buffX, textColor);
+    render(750, 450, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+    sprintf(buffY, "Y:%d", curY);
+    writeText(buffY, textColor);
+    render(750, 500, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+    sprintf(buffRows, "VRSTICE:%d", rows);
+    writeText(buffRows, textColor);
+    render(750, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+    sprintf(buffColumns, "STOLPCI:%d", columns);
+    writeText(buffColumns, textColor);
+    render(750, 200, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+    SDL_RenderPresent(renderer);
     cycleCounter++;
     oldtimestamp = timestamp;
-  }	  	  
-  holes = rows * columns;
-  if(rows%2==0 && columns%2==0)
-  {
-    printf("SODO\n");
-    ss_grid();
-  }
-  else
-  {
-    printf("LIHO\n");
-    ll_grid();
-  }
-  SDL_Delay(5000);
 
+ 
+  }
+  if(pageNumber == 1)
+  {
+    holes = rows * columns;
+    if(rows%2==0 && columns%2==0)
+    {
+      printf("SODO\n");
+      ss_grid();
+    }
+    else
+    {
+      printf("LIHO\n");
+      ll_grid();
+    }
+    start = 0;
+    return 1;
+  }
+  SDL_RenderClear(renderer);
+  start = 0;
+  return 1;
+}
+
+void page_pass()
+{
+  draw();
+  eventUpdate(); 
+  keypad(400, 200, 100, 100);
+  admin(945, 0, 75, 50, 1);
+  SDL_RenderPresent(renderer);
+  SDL_RenderClear(renderer);
+  cycleCounter++;
+  oldtimestamp = timestamp;
+}
+
+void load_page(int pageNumber)
+{
+  switch(pageNumber)
+  {
+    case 1:
+      page_main();
+      break;
+
+    case 2:
+      page_pass();
+      break;
+/*   
+    case 3:
+      page_select();
+      break;
+
+    case 4:
+      page_settings();
+      break;
+
+    case 5:
+      page_manual();
+      break();*/
+  }
+}
+
+int main()
+{
+  printf("**************\n");
+  printf("MOVE PROGRAM\n");
+
+  pageNumber = 1;
+  passText[0] = '\0';
+  init();
+
+  while(1)
+  {
+    load_page(pageNumber);
+  }
+  
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   TTF_Quit();
