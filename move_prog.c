@@ -10,7 +10,7 @@
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
-
+#define DROWSAPP "71395"
 SDL_Renderer *renderer = NULL;
 SDL_Window *window = NULL;
 SDL_Texture *texture = NULL;
@@ -44,6 +44,7 @@ int columns = 32;
 
 
 char passText[5];
+
 char buffRows[20];
 char buffColumns[20];
 char numBuff[10];
@@ -244,7 +245,7 @@ void eventUpdate()
 void plusRow()
 {
   writeText("+", textColor);
-  render(950, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  render(950, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
   if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 0 && touchLocation.y < 100 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
   {
     cycleCheck = cycleCounter;
@@ -255,8 +256,8 @@ void plusRow()
 void minusRow()
 {
   writeText("-", textColor);
-  render(750, 50, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > 700 && touchLocation.x < 800 && touchLocation.y > 0 && touchLocation.y < 100 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
+  render(650, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > 600 && touchLocation.x < 700 && touchLocation.y > 0 && touchLocation.y < 100 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
   {
     cycleCheck = cycleCounter;
     rows--;
@@ -266,7 +267,7 @@ void minusRow()
 void plusColumn()
 {
   writeText("+", textColor);
-  render(950, 150, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  render(950, 200, NULL, 0.0, NULL, SDL_FLIP_NONE); 
   if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 100 && touchLocation.y < 200 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
   {
     cycleCheck = cycleCounter;
@@ -277,8 +278,8 @@ void plusColumn()
 void minusColumn()
 {
   writeText("-", textColor);
-  render(750, 150, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > 700 && touchLocation.x < 800 && touchLocation.y > 100 && touchLocation.y < 200 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
+  render(650, 200, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > 600 && touchLocation.x < 700 && touchLocation.y > 100 && touchLocation.y < 200 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
   {
     cycleCheck = cycleCounter;
     columns--;
@@ -439,6 +440,21 @@ void right_button(int x,  int y, int w, int h)
   }
 }
 
+void button(int x, int y, int w, int h, const char* text, int gotoNum)
+{
+  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+  SDL_RenderDrawLine(renderer, x, y, (x+w), y);
+  SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
+  SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
+  SDL_RenderDrawLine(renderer, x, (y+h), x, y);
+  writeText(text, textColor);
+  render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
+  {
+    pageNumber = gotoNum;
+  }
+}
+
 void keypad(int x, int y, int w, int h)
 {
   int i = 1;
@@ -480,19 +496,21 @@ void keypad(int x, int y, int w, int h)
         {
           strcat(passText, numBuff);
         }
-        else
-        {
-          int ret;
-          ret = strcmp("54321", passText);
-          if(ret == 0)
-          printf("RET: %d\n", ret);
-          {
-            printf("ACCESS GRANTED");
-            pageNumber = 3;
-          }
-          memset(&passText[0], 0, 5);
-        }
       }
+      if(passText[4] != NULL)
+      {
+        int ret;
+        ret = strcmp(DROWSAPP, passText);
+        if(ret == 0)
+        {
+          printf("RET: %d\n", ret);
+          printf("%s equal to %s\n", DROWSAPP, passText);
+          printf("ACCESS GRANTED\n");
+          pageNumber = 3;
+        }
+        memset(&passText[0], 0, 5);
+      }
+
       x = x + w;
       nums++;
     }
@@ -501,6 +519,8 @@ void keypad(int x, int y, int w, int h)
   }
   y = origY;
 }
+
+
 
 
 void admin(int x, int y, int w, int h, int gotoNum)
@@ -731,7 +751,6 @@ int page_main()
 */
   while(!start && pageNumber == 1)
   {
-    printf("PAGE MAIN - not start loop pageNumber: %d\n", pageNumber);
     draw();
     eventUpdate(); 
     initVars(50, 550, 20, 20);
@@ -799,6 +818,61 @@ void page_pass()
   oldtimestamp = timestamp;
 }
 
+void page_select()
+{
+  draw();
+  eventUpdate();
+  admin(945, 0, 75, 50, 1);
+  button(200, 200, 300, 100, "SETTINGS", 4); 
+  button(600, 200, 300, 100, "MANUAL MODE", 5); 
+  SDL_RenderPresent(renderer);
+  SDL_RenderClear(renderer);
+  cycleCounter++;
+  oldtimestamp = timestamp;
+}
+
+void page_settings()
+{
+  draw();
+  eventUpdate();
+  admin(945, 0, 75, 50, 3);
+
+  initVars(50, 550, 20, 20);
+  holes = rows * columns;
+  drawEbGrid();
+    
+  admin(945, 0, 75, 50, 2);
+    
+  sprintf(buffRows, "VRSTICE:%d", rows);
+  writeText(buffRows, textColor);
+  render(700, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+  sprintf(buffColumns, "STOLPCI:%d", columns);
+  writeText(buffColumns, textColor);
+  render(700, 200, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  plusRow();
+  minusRow();
+  plusColumn();
+  minusColumn();
+
+  SDL_RenderPresent(renderer);
+  SDL_RenderClear(renderer);
+  cycleCounter++;
+  oldtimestamp = timestamp;
+}
+
+void page_manual()
+{
+  draw();
+  eventUpdate();
+  admin(945, 0, 75, 50, 3);
+  SDL_RenderPresent(renderer);
+  SDL_RenderClear(renderer);
+  cycleCounter++;
+  oldtimestamp = timestamp;
+}
+
 void load_page(int pageNumber)
 {
   switch(pageNumber)
@@ -810,7 +884,7 @@ void load_page(int pageNumber)
     case 2:
       page_pass();
       break;
-/*   
+  
     case 3:
       page_select();
       break;
@@ -821,7 +895,7 @@ void load_page(int pageNumber)
 
     case 5:
       page_manual();
-      break();*/
+      break;
   }
 }
 
