@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -41,7 +42,7 @@ int timestamp = 0;
 int oldtimestamp = 0;
 int rows = 24;
 int columns = 32;
-
+int program;
 
 char passText[5];
 
@@ -49,7 +50,7 @@ char buffRows[20];
 char buffColumns[20];
 char numBuff[10];
 
-struct editbox eb[1000];
+struct editbox eb[10000];
 int editBox_id_counter;
 
 int curX = 0;
@@ -81,8 +82,14 @@ unsigned char buf[4096];
 
 int pageNumber;
 
+int flags;
+int innited;
+
 int init()
 {  
+  flags = IMG_INIT_JPG|IMG_INIT_PNG;
+  innited = IMG_Init(flags);
+  	
   if((SDL_Init(SDL_INIT_VIDEO||SDL_INIT_EVENTS)) != 0)
   {
     SDL_Log("Unable to initialize SDL:%s ", SDL_GetError());
@@ -90,7 +97,7 @@ int init()
   }  
 
   window = SDL_CreateWindow("IT-Elektronika", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-  SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_BORDERLESS);
+  SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
   
   if (window == NULL)
   {
@@ -101,6 +108,12 @@ int init()
   if(renderer == NULL)
   {
     printf("RENDERER IS NULL\n");
+  }
+
+  if((innited&flags) != flags)
+  {
+    printf("IMG_INIT: Failed to init required jpg an png support!\n");
+    printf("IMG_INIT: %s\n", IMG_GetError());
   }
 
   if(TTF_Init() == -1)
@@ -228,13 +241,28 @@ void eventUpdate()
 {
   while(SDL_PollEvent(&event) != 0 )
   {
-    if(event.type == SDL_FINGERDOWN)
+    /*
+    if(event.type == SDL_FINGERDOWN)  
     {
       
       timestamp = event.tfinger.timestamp;
       touchLocation.x = event.tfinger.x;
       touchLocation.y = event.tfinger.y;
     } 
+    if(event.type == SDL_QUIT)
+    {
+      start = 1;
+    }
+    */
+
+    if(event.type == SDL_MOUSEBUTTONDOWN)  
+    {
+      
+      timestamp = event.button.timestamp;
+      touchLocation.x = event.button.x;
+      touchLocation.y = event.button.y;
+    } 
+
     if(event.type == SDL_QUIT)
     {
       start = 1;
@@ -246,7 +274,7 @@ void plusRow()
 {
   writeText("+", textColor);
   render(950, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 0 && touchLocation.y < 100 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
+  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 50 && touchLocation.y < 150 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
   {
     cycleCheck = cycleCounter;
     rows++;
@@ -257,7 +285,7 @@ void minusRow()
 {
   writeText("-", textColor);
   render(650, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > 600 && touchLocation.x < 700 && touchLocation.y > 0 && touchLocation.y < 100 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
+  if(touchLocation.x > 600 && touchLocation.x < 700 && touchLocation.y > 50 && touchLocation.y < 150 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
   {
     cycleCheck = cycleCounter;
     rows--;
@@ -268,7 +296,7 @@ void plusColumn()
 {
   writeText("+", textColor);
   render(950, 200, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 100 && touchLocation.y < 200 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
+  if(touchLocation.x > 900 && touchLocation.x < 1000 && touchLocation.y > 150 && touchLocation.y < 250 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
   {
     cycleCheck = cycleCounter;
     columns++;
@@ -279,7 +307,7 @@ void minusColumn()
 {
   writeText("-", textColor);
   render(650, 200, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > 600 && touchLocation.x < 700 && touchLocation.y > 100 && touchLocation.y < 200 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
+  if(touchLocation.x > 600 && touchLocation.x < 700 && touchLocation.y > 150 && touchLocation.y < 250 && timestamp > oldtimestamp && cycleCheck != cycleCounter)
   {
     cycleCheck = cycleCounter;
     columns--;
@@ -379,62 +407,131 @@ void diagonal()
   printf("%d:DIAGONAL\n", move_count);
 }
 
-
-void up_button(int x,  int y, int w, int h)
+void up_button(int x,  int y)
 {
-  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-  SDL_RenderDrawLine(renderer, x, y, (x+w), y);
-  SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
-  SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
-  SDL_RenderDrawLine(renderer, x, (y+h), x, y);
-  writeText("UP ", textColor);
-  render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
+  SDL_Surface *imageSurface;
+  freeTexture();
+  imageSurface = IMG_Load("/home/luka/mov/move_program/up.png");
+
+  if(imageSurface == NULL)
+  {
+    printf("Unable to render image surface! SDL_ImageError: %s\n", IMG_GetError());
+  }
+  else
+  {
+    texture = SDL_CreateTextureFromSurface(renderer, imageSurface);
+    if(texture == NULL)
+    {
+      printf("Unable to create texture from rendered image! SDL_ImageError: %s\n", SDL_GetError());
+    }
+    else
+    {
+      textureWidth = imageSurface -> w;
+      textureHeight = imageSurface -> h;
+    }
+    SDL_FreeSurface(imageSurface);
+  }
+
+  render(x, y, NULL, 0.0, NULL, SDL_FLIP_NONE);
+  
+  if(touchLocation.x > x && touchLocation.x < x+100 && touchLocation.y > y && touchLocation.y < y + 100 && timestamp > oldtimestamp)
   {
     up();
   }
 }
 
-void down_button(int x,  int y, int w, int h)
+void down_button(int x,  int y)
 {
-  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-  SDL_RenderDrawLine(renderer, x, y, (x+w), y);
-  SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
-  SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
-  SDL_RenderDrawLine(renderer, x, (y+h), x, y);
-  writeText("DOWN", textColor);
-  render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
+  SDL_Surface *imageSurface;
+  freeTexture();
+  imageSurface = IMG_Load("/home/luka/mov/move_program/down.png");
+
+  if(imageSurface == NULL)
+  {
+    printf("Unable to render image surface! SDL_ImageError: %s\n", IMG_GetError());
+  }
+  else
+  {
+    texture = SDL_CreateTextureFromSurface(renderer, imageSurface);
+    if(texture == NULL)
+    {
+      printf("Unable to create texture from rendered image! SDL_ImageError: %s\n", SDL_GetError());
+    }
+    else
+    {
+      textureWidth = imageSurface -> w;
+      textureHeight = imageSurface -> h;
+    }
+    SDL_FreeSurface(imageSurface);
+  }	
+  render(x, y, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  if(touchLocation.x > x && touchLocation.x < x+100 && touchLocation.y > y && touchLocation.y < y + 100 && timestamp > oldtimestamp)
   {
     down();
   }
 }
 
-void left_button(int x,  int y, int w, int h)
+void left_button(int x,  int y)
 {
-  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-  SDL_RenderDrawLine(renderer, x, y, (x+w), y);
-  SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
-  SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
-  SDL_RenderDrawLine(renderer, x, (y+h), x, y);
-  writeText("LEFT", textColor);
-  render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
+  SDL_Surface *imageSurface;
+  freeTexture();
+  imageSurface = IMG_Load("/home/luka/mov/move_program/left.png");
+
+  if(imageSurface == NULL)
+  {
+    printf("Unable to render image surface! SDL_ImageError: %s\n", IMG_GetError());
+  }
+  else
+  {
+    texture = SDL_CreateTextureFromSurface(renderer, imageSurface);
+    if(texture == NULL)
+    {
+      printf("Unable to create texture from rendered image! SDL_ImageError: %s\n", SDL_GetError());
+    }
+    else
+    {
+      textureWidth = imageSurface -> w;
+      textureHeight = imageSurface -> h;
+    }
+    SDL_FreeSurface(imageSurface);
+  }
+  
+  render(x, y, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  if(touchLocation.x > x && touchLocation.x < x+100 && touchLocation.y > y && touchLocation.y < y + 100 && timestamp > oldtimestamp)
   {
     left();
   }
 }
 
-void right_button(int x,  int y, int w, int h)
+void right_button(int x,  int y)
 {
-  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-  SDL_RenderDrawLine(renderer, x, y, (x+w), y);
-  SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
-  SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
-  SDL_RenderDrawLine(renderer, x, (y+h), x, y);
-  writeText("RIGHT", textColor);
-  render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
-  if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
+  SDL_Surface *imageSurface;
+  freeTexture();
+  imageSurface = IMG_Load("/home/luka/mov/move_program/right.png");
+
+  if(imageSurface == NULL)
+  {
+    printf("Unable to render image surface! SDL_ImageError: %s\n", IMG_GetError());
+  }
+  else
+  {
+    texture = SDL_CreateTextureFromSurface(renderer, imageSurface);
+    if(texture == NULL)
+    {
+      printf("Unable to create texture from rendered image! SDL_ImageError: %s\n", SDL_GetError());
+    }
+    else
+    {
+      textureWidth = imageSurface -> w;
+      textureHeight = imageSurface -> h;
+    }
+    SDL_FreeSurface(imageSurface);
+  }
+  render(x, y, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  if(touchLocation.x > x && touchLocation.x < x+100 && touchLocation.y > y && touchLocation.y < y + 100 && timestamp > oldtimestamp)
   {
     right();
   }
@@ -453,6 +550,28 @@ void button(int x, int y, int w, int h, const char* text, int gotoNum)
   {
     pageNumber = gotoNum;
   }
+}
+
+void button_save(int x, int y, int w, int h)
+{
+  
+
+  SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+  SDL_RenderDrawLine(renderer, x, y, (x+w), y);
+  SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
+  SDL_RenderDrawLine(renderer, (x+w), (y+h), x, (y+h));
+  SDL_RenderDrawLine(renderer, x, (y+h), x, y);
+  writeText("SHRANI", textColor);
+  render(x+((w/2)-(textureWidth/2)), y + ((h/2)-(textureHeight/2)), NULL, 0.0, NULL, SDL_FLIP_NONE); 
+  if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
+  {
+    system("rm param.txt");	  
+    FILE *fp = fopen("/home/luka/mov/move_program/param.txt", "w");
+    fprintf(fp,"%d\n", rows);
+    fprintf(fp, "%d\n", columns);  
+    fclose(fp);
+  }
+  
 }
 
 void keypad(int x, int y, int w, int h)
@@ -723,10 +842,94 @@ void ss_grid()
       down();
     }
     printf("X: %d  Y: %d DIRECTION: %d \n", curX, curY, dir_move);
+    SDL_Delay(300);
   }
+
 }
 
+void sl_grid()
+{ 
+  dir_move = 0;
+  pattern2_move_count = 1;
+  printf("SS GRID\n");
 
+  for(move_count=0;move_count<holes;++move_count)
+  {
+    printf("**************\n");
+    printf("%d\n", move_count);
+    draw();	
+    drawEbGrid();
+    
+    sprintf(buffCount, "N:%d", move_count);
+    writeText(buffCount, textColor);
+    render(750, 400, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+    sprintf(buffX, "X:%d", curX);
+    writeText(buffX, textColor);
+    render(750, 450, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+    sprintf(buffY, "Y:%d", curY);
+    writeText(buffY, textColor);
+    render(750, 500, NULL, 0.0, NULL, SDL_FLIP_NONE);
+    
+    sprintf(buffRows, "VRSTICE:%d", rows);
+    writeText(buffRows, textColor);
+    render(750, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+    sprintf(buffColumns, "STOLPCI:%d", columns);
+    writeText(buffColumns, textColor);
+    render(750, 200, NULL, 0.0, NULL, SDL_FLIP_NONE);
+   
+    SDL_RenderPresent(renderer);
+    SDL_RenderClear(renderer);
+    
+    if(move_count < columns)
+    {
+      up();
+    }
+    else if(move_count == columns)
+    {
+      right();
+    }
+    else if(move_count > columns && move_count < ((holes - columns)))
+    {
+      if(dir_move == 0 && pattern2_move_count < columns)
+      {
+        down();
+        pattern2_move_count++;
+      }   
+      else if(dir_move == 1 && pattern2_move_count < columns)
+      {
+        up();
+        pattern2_move_count++;
+      }
+      else if(dir_move == 0 && pattern2_move_count == columns && move_count != (holes - columns))
+      {
+        right();      
+        dir_move = 1;
+        pattern2_move_count = 1;
+      }
+      else if(dir_move == 1 && pattern2_move_count == columns && move_count != (holes - columns))
+      {
+        right();
+        dir_move = 0;
+        pattern2_move_count = 1;
+      }
+    }
+    else if(move_count == ((holes - columns)))
+    {
+      down();    
+    }
+    else if(move_count > (holes - columns) && move_count < holes) 
+    {
+      left();
+    }
+    printf("X: %d  Y: %d DIRECTION: %d  HOLES: %d\n", curX, curY, dir_move, holes);
+    
+    SDL_Delay(300);
+  }
+
+}
 
 int page_main()
 {
@@ -753,7 +956,7 @@ int page_main()
   {
     draw();
     eventUpdate(); 
-    initVars(50, 550, 20, 20);
+    initVars(50, 550, 15, 15);
     holes = rows * columns;
     drawEbGrid();
     
@@ -793,6 +996,16 @@ int page_main()
       printf("SODO\n");
       ss_grid();
     }
+    else if(rows%2 == 0&& columns%2!=0)
+    {
+      printf("LIHO\n");
+      ss_grid();
+    }
+    else if(rows%2!=0 && columns%2==0)
+    {
+      printf("SODO\n");
+      sl_grid();
+    }	    
     else
     {
       printf("LIHO\n");
@@ -837,7 +1050,7 @@ void page_settings()
   eventUpdate();
   admin(945, 0, 75, 50, 3);
 
-  initVars(50, 550, 20, 20);
+  initVars(50, 550, 15, 15);
   holes = rows * columns;
   drawEbGrid();
     
@@ -851,10 +1064,14 @@ void page_settings()
   writeText(buffColumns, textColor);
   render(700, 200, NULL, 0.0, NULL, SDL_FLIP_NONE);
 
+
   plusRow();
   minusRow();
   plusColumn();
   minusColumn();
+
+  button_save(650, 300, 300, 100);
+
 
   SDL_RenderPresent(renderer);
   SDL_RenderClear(renderer);
@@ -867,6 +1084,11 @@ void page_manual()
   draw();
   eventUpdate();
   admin(945, 0, 75, 50, 3);
+  up_button(500, 100);
+  down_button(500, 250);
+  left_button(300, 250);
+  right_button(700, 250);
+
   SDL_RenderPresent(renderer);
   SDL_RenderClear(renderer);
   cycleCounter++;
@@ -903,12 +1125,29 @@ int main()
 {
   printf("**************\n");
   printf("MOVE PROGRAM\n");
-
+  char *line = NULL;
+  size_t len = 0;
+  int i = 0;
+  FILE *fp = fopen("/home/luka/mov/move_program/param.txt", "r");
+  for(i = 0; i < 2; ++i)
+  {
+    getline(&line, &len, fp);
+    printf("%s", line);
+    if(i == 0)
+    {
+      rows = atoi(line);
+    }
+    else
+    {
+      columns = atoi(line);	    
+    }
+  }
   pageNumber = 1;
   passText[0] = '\0';
   init();
-
-  while(1)
+  program = 1;
+  
+  while(program == 1)
   {
     load_page(pageNumber);
   }
