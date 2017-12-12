@@ -39,6 +39,11 @@
 #define RS232_PORTNR  38
 
 
+int cbits;
+int cpar;
+int ipar;
+int bstop;
+
 int Cport[RS232_PORTNR],
     error;
 
@@ -131,11 +136,17 @@ int RS232_OpenComport(int comport_number, int baudrate, const char *mode)
                    return(1);
                    break;
   }
-
+/*
   int cbits=CS8,
       cpar=0,
       ipar=IGNPAR,
       bstop=0;
+*/
+
+  cbits = CS8;
+  cpar = 0;
+  ipar = IGNPAR;
+  bstop = 0;
 
   if(strlen(mode) != 3)
   {

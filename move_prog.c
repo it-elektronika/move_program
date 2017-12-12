@@ -8,18 +8,21 @@
 #include "rs232.h"
 #include "func_init.h"
 
-
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
 #define DROWSAPP "71395"
+
 SDL_Renderer *renderer = NULL;
 SDL_Window *window = NULL;
 SDL_Texture *texture = NULL;
 SDL_Color textColor = {255, 255, 255, 255};
 SDL_Event event;
 SDL_Point touchLocation = {-1, -1};
-
+SDL_Rect fillRect = {0, 0, 0, 0};
 TTF_Font *textFont = NULL;
+
+FILE *fp;
+
 struct editbox
 {
   int x;
@@ -77,7 +80,7 @@ int i;
 int n;
 int received = 0;
 char mode[]={'8','N','1',0};
-char str[4][512];
+char str[12][512];
 unsigned char buf[4096];
 
 int pageNumber;
@@ -85,7 +88,7 @@ int pageNumber;
 int flags;
 int innited;
 
-int init()
+int init()    /* things needed to start sdl2 properly */
 {  
   flags = IMG_INIT_JPG|IMG_INIT_PNG;
   innited = IMG_Init(flags);
@@ -125,7 +128,7 @@ int init()
   return 15;
 }
 
-void freeTexture(void)
+void freeTexture(void)  /* taking care of memory */
 {
   if(texture != NULL)
   {
@@ -136,13 +139,13 @@ void freeTexture(void)
   }
 }
 
-void draw(void)
+void draw(void)     /* drawing background */
 {
   SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
   SDL_RenderClear(renderer);
 }
 
-void render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip)
+void render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip) /* render something(object) to screen */
 {
   SDL_Rect renderQuad;
   renderQuad.x = x;
@@ -158,7 +161,7 @@ void render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_R
   SDL_RenderCopyEx(renderer, texture, clip, &renderQuad, angle, center, flip);
 }
 
-void drawTextBox(int i, int x, int y, int w, int h)
+void drawTextBox(int i, int x, int y, int w, int h)  /*drawing one text box */
 {
   if(eb[i].hasFocus == 0)
   {
@@ -170,7 +173,7 @@ void drawTextBox(int i, int x, int y, int w, int h)
   }
   if(eb[i].posX == curX && eb[i].posY == curY)
   {
-    SDL_Rect fillRect = {x, y, w, h};	  
+    SDL_Rect fillRect = {x, y, w, h};  
     SDL_SetRenderDrawColor(renderer, 110, 70, 200, 70);
     SDL_RenderFillRect(renderer, &fillRect);
     SDL_RenderDrawLine(renderer, x, y, (x+w), y);
@@ -181,7 +184,7 @@ void drawTextBox(int i, int x, int y, int w, int h)
 }
 
 
-void drawEbGrid(void)
+void drawEbGrid(void)   /* drawing many textboxes */
 {
   int i;
   
@@ -191,7 +194,7 @@ void drawEbGrid(void)
   }
 }
 
-int writeText(const char *text, SDL_Color textColor)
+int writeText(const char *text, SDL_Color textColor)  /* text to be written, after the call to this function a render function call must be made */
 {
  	
   SDL_Surface* textSurface;
@@ -221,7 +224,7 @@ int writeText(const char *text, SDL_Color textColor)
   return texture != NULL;
 }
 
-void drawButton(int x,  int y, int w, int h)
+void drawButton(int x,  int y, int w, int h)    /* button to start movement - obsolete - will use physical button */
 {
   SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
   SDL_RenderDrawLine(renderer, x, y, (x+w), y);
@@ -236,7 +239,7 @@ void drawButton(int x,  int y, int w, int h)
   }
 }
 
-void eventUpdate()
+void eventUpdate()   /* handling touch events */
 {
   while(SDL_PollEvent(&event) != 0 )
   {
@@ -271,7 +274,7 @@ void eventUpdate()
   }
 }
 
-void plusRow()
+void plusRow()  /* plus button to increment value of rows */
 {
   writeText("+", textColor);
   render(950, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
@@ -282,7 +285,7 @@ void plusRow()
   } 
 }
 
-void minusRow()
+void minusRow()   /* minus button to decrement value of rows */
 {
   writeText("-", textColor);
   render(650, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
@@ -293,7 +296,7 @@ void minusRow()
   } 
 }
 
-void plusColumn()
+void plusColumn() /* plus button to increment value of columns */
 {
   writeText("+", textColor);
   render(950, 200, NULL, 0.0, NULL, SDL_FLIP_NONE); 
@@ -304,7 +307,7 @@ void plusColumn()
   }
 }
 
-void minusColumn()
+void minusColumn() /* minus button to decrement value of rows */
 {
   writeText("-", textColor);
   render(650, 200, NULL, 0.0, NULL, SDL_FLIP_NONE); 
@@ -315,8 +318,7 @@ void minusColumn()
   }
 }
 
-
-void initVars(int x, int y, int w, int h)
+void initVars(int x, int y, int w, int h)  /* handling struct for drawing grids */
 {
   int drawRows = 0;
   int drawColumns = 0;
@@ -344,7 +346,7 @@ void initVars(int x, int y, int w, int h)
   }
 }
 
-void command(int number)
+void command(int number)  /*  sending serial communication command */
 {
   RS232_cputs(cport_nr, str[number]);
   received = 0;
@@ -372,43 +374,80 @@ void command(int number)
 }
 
 
-void up()
+void up()                     /*movement up */
 {
   curY++;	
   printf("%d:UP\n", move_count);
   /*
-  command(1);
-  command(2);*/
+  command(3);
+  command(6);*/
 }
-void down()
+void down()                    /*movement down */
 {
   curY--;	
   printf("%d:DOWN\n", move_count);
+  /*
+  command(4);
+  command(6);*/
 }
-void left()
+void left()                    /*movement left */
 {
   curX--;	
   printf("%d:LEFT\n", move_count);
+/*
+  command(2);
+  command(6);*/
 }
-void right()
+void right()                   /*movement right */
 {
   curX++;
   printf("%d:RIGHT\n", move_count);
   /*
+  command(1);
+  command(6);
+  
   while(readVariableValue("I_1") == 0)
   {
     printf("WAITING FOR SPRING\n");
-  }*/
+  }
+  writeVariableValue("O_1", 1);
+  SDL_Delay(10);
+  writeVariableValue("O_1", 0);
+  */
 }
 
-void diagonal()
+void diagonal()              /*moving diagonally */
 {
   curX++;
   curY++;
   printf("%d:DIAGONAL\n", move_count);
+  /*
+  command(1);
+  command(3);
+  command(6);*/
 }
 
-void up_button(int x,  int y)
+void home()                /*moving to home position */
+{
+  printf("HOME\n");
+  /*
+  command(1); 
+  command(5);
+  command(6);
+  */
+}
+
+void park()                /*movement to park position */
+{
+/*
+  printf("PARK\n");
+  command(1);
+  command(7);
+  command(8);
+*/
+}
+
+void up_button(int x,  int y)    /* drawing button to go up */
 {
   SDL_Surface *imageSurface;
   freeTexture();
@@ -441,7 +480,7 @@ void up_button(int x,  int y)
   }
 }
 
-void down_button(int x,  int y)
+void down_button(int x,  int y)       /* drawing button to go down */
 {
   SDL_Surface *imageSurface;
   freeTexture();
@@ -473,7 +512,7 @@ void down_button(int x,  int y)
   }
 }
 
-void left_button(int x,  int y)
+void left_button(int x,  int y)              /* drawing button to go left */
 {
   SDL_Surface *imageSurface;
   freeTexture();
@@ -506,7 +545,7 @@ void left_button(int x,  int y)
   }
 }
 
-void right_button(int x,  int y)
+void right_button(int x,  int y)       /* drawing button to go right */
 {
   SDL_Surface *imageSurface;
   freeTexture();
@@ -538,7 +577,7 @@ void right_button(int x,  int y)
   }
 }
 
-void button(int x, int y, int w, int h, const char* text, int gotoNum)
+void button(int x, int y, int w, int h, const char* text, int gotoNum) /* menu button - move to another page (settings/manual) */
 {
   SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
   SDL_RenderDrawLine(renderer, x, y, (x+w), y);
@@ -553,10 +592,8 @@ void button(int x, int y, int w, int h, const char* text, int gotoNum)
   }
 }
 
-void button_save(int x, int y, int w, int h)
+void button_save(int x, int y, int w, int h)  /* save row/column data button */
 {
-  
-
   SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
   SDL_RenderDrawLine(renderer, x, y, (x+w), y);
   SDL_RenderDrawLine(renderer, (x+w), y, (x+w), (y+h)); 
@@ -567,7 +604,7 @@ void button_save(int x, int y, int w, int h)
   if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
   {
     system("rm param.txt");	  
-    FILE *fp = fopen("/home/pi/move_program/param.txt", "w");
+    fp = fopen("/home/pi/move_program/param.txt", "w");
     fprintf(fp,"%d\n", rows);
     fprintf(fp, "%d\n", columns);  
     fclose(fp);
@@ -575,7 +612,7 @@ void button_save(int x, int y, int w, int h)
   
 }
 
-void keypad(int x, int y, int w, int h)
+void keypad(int x, int y, int w, int h)  /* drawing keypad for entering password */
 {
   int i = 1;
   int j = 1;
@@ -612,12 +649,12 @@ void keypad(int x, int y, int w, int h)
       if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp && cycleCheck != cycleCounter)
       {
         cycleCheck = cycleCounter;
-        if(passText[4] == NULL)
+        if(passText[4] == '\0')
         {
           strcat(passText, numBuff);
         }
       }
-      if(passText[4] != NULL)
+      if(passText[4] != '\0')
       {
         int ret;
         ret = strcmp(DROWSAPP, passText);
@@ -643,7 +680,7 @@ void keypad(int x, int y, int w, int h)
 
 
 
-void admin(int x, int y, int w, int h, int gotoNum)
+void admin(int x, int y, int w, int h, int gotoNum) /* move to admin area button */
 {
   SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
   SDL_RenderDrawLine(renderer, x, y, (x+w), y);
@@ -657,10 +694,11 @@ void admin(int x, int y, int w, int h, int gotoNum)
   {
     cycleCheck = cycleCounter;
     pageNumber = gotoNum;
+    memset(&passText[0], 0, 5);
   }
 }
 
-void ll_grid()
+void ll_grid()  /* start movement procedure for odd value grid */
 { 
   dir_move = 1;
   pattern_move_count = 1;
@@ -762,9 +800,12 @@ void ll_grid()
     }
     SDL_Delay(300);
   }
+  /*
+  park();
+  */
 }
 
-void ss_grid()
+void ss_grid()/* start movement procedure for even value grid */
 { 
   dir_move = 0;
   pattern2_move_count = 1;
@@ -849,10 +890,12 @@ void ss_grid()
     printf("X: %d  Y: %d DIRECTION: %d \n", curX, curY, dir_move);
     SDL_Delay(300);
   }
-
+/*
+  park();
+  */
 }
 
-void ls_grid()
+void ls_grid()               /* start movement procedure for odd and even value grid */
 { 
   dir_move = 0;
   pattern2_move_count = 1;
@@ -937,20 +980,38 @@ void ls_grid()
     
     SDL_Delay(300);
   }
-
+  /*
+  park();
+  */
 }
 
-int page_main()
+int page_main()   /* setting up main page */
 {
   printf("PAGE MAIN\n");
   
   strcpy(str[0], "I00HT*");
 
-  strcpy(str[1], "I00CY005000.000000000040011110001001*");
- 
-  strcpy(str[2], "I00SY*");
+  strcpy(str[1], "I00CX005000.000000000120011110001001*");     /* X plus */
 
-  strcpy(str[3], "I00KY1*");
+  strcpy(str[2], "I00CX005000.000000000120001110001001*");     /* X minus */
+ 
+  strcpy(str[3], "I00CY005000.000000000120011110001001*");     /* Y plus */
+  
+  strcpy(str[4], "I00CY005000.000000000120001110001001*");     /* Y minus */
+  
+  strcpy(str[5], "I00CX000500.00010000012000 1110001001*");    /* HOME X */
+
+  strcpy(str[6], "I00CY000500.00010000012000 1110001001*");    /* HOME Y */
+  
+  strcpy(str[7], "I00CX000500.00010000012000 1110001001*");    /* PARK X - to be defined */  
+  
+  strcpy(str[8], "I00CY000500.00010000012000 1110001001*");    /* PARK Y - to be defined*/
+  
+  strcpy(str[9], "I00SY*");
+  
+  strcpy(str[10], "I00KX1*");
+  
+  strcpy(str[11], "I00KY1*");
 /*
   if(RS232_OpenComport(cport_nr, bdrate, mode))
   {
@@ -960,6 +1021,8 @@ int page_main()
   }
  
   command(0); 
+  command(10);
+  command(11);
 */
   while(!start && pageNumber == 1)
   {
@@ -1028,7 +1091,7 @@ int page_main()
   return 1;
 }
 
-void page_pass()
+void page_pass() /* setting up password page */
 {
   draw();
   eventUpdate(); 
@@ -1040,7 +1103,7 @@ void page_pass()
   oldtimestamp = timestamp;
 }
 
-void page_select()
+void page_select() /* setting up selection page */
 {
   draw();
   eventUpdate();
@@ -1053,7 +1116,7 @@ void page_select()
   oldtimestamp = timestamp;
 }
 
-void page_settings()
+void page_settings() /*setting up settings page*/
 {
   draw();
   eventUpdate();
@@ -1088,7 +1151,7 @@ void page_settings()
   oldtimestamp = timestamp;
 }
 
-void page_manual()
+void page_manual() /*setting up manual page*/
 {
   draw();
   eventUpdate();
@@ -1104,7 +1167,7 @@ void page_manual()
   oldtimestamp = timestamp;
 }
 
-void load_page(int pageNumber)
+void load_page(int pageNumber) /*handling loading pages */
 {
   switch(pageNumber)
   {
@@ -1132,12 +1195,21 @@ void load_page(int pageNumber)
 
 int main()
 {
+  FILE *fp;  
+  char *line;
+  size_t len;
+  int i;
+
+  i = 0;
+  line = NULL;
+  len = 0;
+     
+  fp = fopen("/home/pi/move_program/param.txt", "r");
+  
   printf("**************\n");
   printf("MOVE PROGRAM\n");
-  char *line = NULL;
-  size_t len = 0;
-  int i = 0;
-  FILE *fp = fopen("/home/pi/move_program/param.txt", "r");
+
+
   for(i = 0; i < 2; ++i)
   {
     getline(&line, &len, fp);
@@ -1155,7 +1227,11 @@ int main()
   passText[0] = '\0';
   init();
   program = 1;
-  
+
+  /*
+  home();
+  */
+ 
   while(program == 1)
   {
     load_page(pageNumber);
