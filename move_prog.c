@@ -97,7 +97,7 @@ int init()
   }  
 
   window = SDL_CreateWindow("IT-Elektronika", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-  SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+  SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_BORDERLESS);
   
   if (window == NULL)
   {
@@ -185,7 +185,6 @@ void drawEbGrid(void)
 {
   int i;
   
-  
   for(i = 0; i < holes; ++i)
   {
     drawTextBox(i, eb[i].x, eb[i].y, eb[i].w, eb[i].h);
@@ -241,20 +240,21 @@ void eventUpdate()
 {
   while(SDL_PollEvent(&event) != 0 )
   {
-    /*
+    
     if(event.type == SDL_FINGERDOWN)  
     {
       
       timestamp = event.tfinger.timestamp;
       touchLocation.x = event.tfinger.x;
       touchLocation.y = event.tfinger.y;
-    } 
+    }
+    /* 
     if(event.type == SDL_QUIT)
     {
       start = 1;
     }
-    */
-
+    
+    
     if(event.type == SDL_MOUSEBUTTONDOWN)  
     {
       
@@ -267,6 +267,7 @@ void eventUpdate()
     {
       start = 1;
     }
+    */
   }
 }
 
@@ -411,7 +412,7 @@ void up_button(int x,  int y)
 {
   SDL_Surface *imageSurface;
   freeTexture();
-  imageSurface = IMG_Load("/home/luka/mov/move_program/up.png");
+  imageSurface = IMG_Load("/home/pi/move_program/up.png");
 
   if(imageSurface == NULL)
   {
@@ -444,7 +445,7 @@ void down_button(int x,  int y)
 {
   SDL_Surface *imageSurface;
   freeTexture();
-  imageSurface = IMG_Load("/home/luka/mov/move_program/down.png");
+  imageSurface = IMG_Load("/home/pi/move_program/down.png");
 
   if(imageSurface == NULL)
   {
@@ -476,7 +477,7 @@ void left_button(int x,  int y)
 {
   SDL_Surface *imageSurface;
   freeTexture();
-  imageSurface = IMG_Load("/home/luka/mov/move_program/left.png");
+  imageSurface = IMG_Load("/home/pi/move_program/left.png");
 
   if(imageSurface == NULL)
   {
@@ -509,7 +510,7 @@ void right_button(int x,  int y)
 {
   SDL_Surface *imageSurface;
   freeTexture();
-  imageSurface = IMG_Load("/home/luka/mov/move_program/right.png");
+  imageSurface = IMG_Load("/home/pi/move_program/right.png");
 
   if(imageSurface == NULL)
   {
@@ -566,7 +567,7 @@ void button_save(int x, int y, int w, int h)
   if(touchLocation.x > x && touchLocation.x < x+w && touchLocation.y > y && touchLocation.y < y + h && timestamp > oldtimestamp)
   {
     system("rm param.txt");	  
-    FILE *fp = fopen("/home/luka/mov/move_program/param.txt", "w");
+    FILE *fp = fopen("/home/pi/move_program/param.txt", "w");
     fprintf(fp,"%d\n", rows);
     fprintf(fp, "%d\n", columns);  
     fclose(fp);
@@ -1136,7 +1137,7 @@ int main()
   char *line = NULL;
   size_t len = 0;
   int i = 0;
-  FILE *fp = fopen("/home/luka/mov/move_program/param.txt", "r");
+  FILE *fp = fopen("/home/pi/move_program/param.txt", "r");
   for(i = 0; i < 2; ++i)
   {
     getline(&line, &len, fp);
