@@ -664,7 +664,7 @@ void ll_grid()
   dir_move = 1;
   pattern_move_count = 1;
   pattern2_move_count = 1;
-  for(move_count=0;move_count<holes+1;move_count++)
+  for(move_count=0;move_count<holes;move_count++)
   {
     printf("%d\n", readVariableValue("I_1"));
     printf("%d\n", move_count);
@@ -759,7 +759,7 @@ void ll_grid()
     {
       printf("---------------------------------%d------NO MOVE ---------------------------------------------\n", move_count);
     }
-
+    SDL_Delay(300);
   }
 }
 
@@ -841,13 +841,17 @@ void ss_grid()
     {
       down();
     }
+    else
+    {
+      printf("---------------------------------%d------NO MOVE ---------------------------------------------\n", move_count);
+    }
     printf("X: %d  Y: %d DIRECTION: %d \n", curX, curY, dir_move);
     SDL_Delay(300);
   }
 
 }
 
-void sl_grid()
+void ls_grid()
 { 
   dir_move = 0;
   pattern2_move_count = 1;
@@ -883,33 +887,33 @@ void sl_grid()
     SDL_RenderPresent(renderer);
     SDL_RenderClear(renderer);
     
-    if(move_count < columns)
+    if(move_count < rows-1)
     {
       up();
     }
-    else if(move_count == columns)
+    else if(move_count == rows-1)
     {
       right();
     }
-    else if(move_count > columns && move_count < ((holes - columns)))
+    else if(move_count > rows-1 && move_count < ((holes - columns)))
     {
-      if(dir_move == 0 && pattern2_move_count < columns)
+      if(dir_move == 0 && pattern2_move_count < rows-1)
       {
         down();
         pattern2_move_count++;
       }   
-      else if(dir_move == 1 && pattern2_move_count < columns)
+      else if(dir_move == 1 && pattern2_move_count < rows-1)
       {
         up();
         pattern2_move_count++;
       }
-      else if(dir_move == 0 && pattern2_move_count == columns && move_count != (holes - columns))
+      else if(dir_move == 0 && pattern2_move_count == rows-1 && move_count != (holes - columns))
       {
         right();      
         dir_move = 1;
         pattern2_move_count = 1;
       }
-      else if(dir_move == 1 && pattern2_move_count == columns && move_count != (holes - columns))
+      else if(dir_move == 1 && pattern2_move_count == rows-1 && move_count != (holes - columns))
       {
         right();
         dir_move = 0;
@@ -923,6 +927,10 @@ void sl_grid()
     else if(move_count > (holes - columns) && move_count < holes) 
     {
       left();
+    }
+    else
+    {
+      printf("---------------------------------%d------NO MOVE ---------------------------------------------\n", move_count);
     }
     printf("X: %d  Y: %d DIRECTION: %d  HOLES: %d\n", curX, curY, dir_move, holes);
     
@@ -1004,7 +1012,7 @@ int page_main()
     else if(rows%2!=0 && columns%2==0)
     {
       printf("SODO\n");
-      sl_grid();
+      ls_grid();
     }	    
     else
     {
