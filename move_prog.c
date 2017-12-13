@@ -351,7 +351,7 @@ void command(int number)  /*  sending serial communication command */
   RS232_cputs(cport_nr, str[number]);
   received = 0;
   printf("sent: %s\n", str[number]);
-  usleep(100000);
+  //usleep(100000);
   
   n = RS232_PollComport(cport_nr, buf, 4095);
   while(received == 0)
