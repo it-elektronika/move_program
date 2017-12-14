@@ -36,7 +36,6 @@ struct editbox
 };
 
 int PiControlHandle_g = -1;
-
 int start = 0;
 int cycleCounter = 0;
 int cycleCheck = 0;
@@ -80,7 +79,7 @@ int i;
 int n;
 int received = 0;
 char mode[]={'8','N','1',0};
-char str[12][512];
+char str[13][512];
 unsigned char buf[4096];
 
 int pageNumber;
@@ -126,6 +125,46 @@ int init()    /* things needed to start sdl2 properly */
   textFont = TTF_OpenFont("BebasNeue Bold.ttf", 60);
   
   return 15;
+}
+
+void comm_init()
+{
+  strcpy(str[0], "I00HT*");
+
+  strcpy(str[1], "I00CX005000.000000000120011110001001*");     /* X plus */
+
+  strcpy(str[2], "I00CX005000.000000000120001110001001*");     /* X minus */
+  
+  strcpy(str[3], "I00CY005000.000000000120011110001001*");     /* Y plus */
+  
+  strcpy(str[4], "I00CY005000.000000000120001110001001*");     /* Y minus */
+  
+  strcpy(str[5], "I00CX000500.000100000120001110001001*");    /* HOME X */
+
+  strcpy(str[6], "I00CY000500.000100000120001110001001*");    /* HOME Y */
+  
+  strcpy(str[7], "I00CX000500.000100000120001110001001*");    /* PARK X - to be defined */  
+  
+  strcpy(str[8], "I00CY000500.000100000120001110001001*");    /* PARK Y - to be defined*/
+  
+  strcpy(str[9], "I00SX*");
+  
+  strcpy(str[10], "I00SY*");
+  
+  strcpy(str[11], "I00KX1*");
+  
+  strcpy(str[12], "I00KY1*");
+
+  strcpy(str[13], "I00KX0*");
+  
+  strcpy(str[14], "I00KY0*");
+
+  if(RS232_OpenComport(cport_nr, bdrate, mode))
+  {
+    printf("Can not open comport\n");
+
+    return(0);
+  }
 }
 
 void freeTexture(void)  /* taking care of memory */
@@ -351,7 +390,7 @@ void command(int number)  /*  sending serial communication command */
   RS232_cputs(cport_nr, str[number]);
   received = 0;
   printf("sent: %s\n", str[number]);
-  //usleep(100000);
+  usleep(100000);
   
   n = RS232_PollComport(cport_nr, buf, 4095);
   while(received == 0)
@@ -378,41 +417,44 @@ void up()                     /*movement up */
 {
   curY++;	
   printf("%d:UP\n", move_count);
-  /*
+  
   command(3);
-  command(6);*/
+  command(10);
+  /*
+  handle_spring();
+  */
 }
 void down()                    /*movement down */
 {
   curY--;	
   printf("%d:DOWN\n", move_count);
-  /*
+  
   command(4);
-  command(6);*/
+  command(10);
+  /*
+  handle_spring();
+  */
 }
 void left()                    /*movement left */
 {
   curX--;	
   printf("%d:LEFT\n", move_count);
-/*
+
   command(2);
-  command(6);*/
+  command(9);
+  /*
+  handle_spring();
+  */
 }
 void right()                   /*movement right */
 {
   curX++;
   printf("%d:RIGHT\n", move_count);
-  /*
-  command(1);
-  command(6);
   
-  while(readVariableValue("I_1") == 0)
-  {
-    printf("WAITING FOR SPRING\n");
-  }
-  writeVariableValue("O_1", 1);
-  SDL_Delay(10);
-  writeVariableValue("O_1", 0);
+  command(1);
+  command(9);
+  /*
+  handle_spring();
   */
 }
 
@@ -425,26 +467,51 @@ void diagonal()              /*moving diagonally */
   command(1);
   command(3);
   command(6);*/
+  /*
+  handle_sping();
+  */
 }
 
 void home()                /*moving to home position */
 {
   printf("HOME\n");
   /*
-  command(1); 
+  command(11);
+  command(12);
+   
   command(5);
   command(6);
   */
 }
 
-void park()                /*movement to park position */
+void park_from_home()                /*movement to park position */
 {
 /*
   printf("PARK\n");
-  command(1);
+  command(11);
+  command(12);
   command(7);
   command(8);
+  command(13);
+  command(14);
 */
+}
+
+void park_from_work()
+{
+  /*
+  command(7);
+  command(8);
+  */
+}
+
+void start_procedure()
+{
+  home();
+  while(readVariableValue("I_2") == 0 && readVariableValue("I_3") == 0)
+  {
+    printf("GOING HOME\n"); 
+  }
 }
 
 void up_button(int x,  int y)    /* drawing button to go up */
@@ -698,6 +765,17 @@ void admin(int x, int y, int w, int h, int gotoNum) /* move to admin area button
   }
 }
 
+void handle_spring()
+{
+  while(readVariableValue("I_1") == 0 && move_count != holes)  // do not wait at the last hole. it was filled in the beggining //
+  {
+    printf("WAITING FOR SPRING\n");
+  }
+  writeVariableValue("O_1", 1);
+  SDL_Delay(10);
+  writeVariableValue("O_1", 0); 
+}
+
 void ll_grid()  /* start movement procedure for odd value grid */
 { 
   dir_move = 1;
@@ -810,7 +888,7 @@ void ss_grid()/* start movement procedure for even value grid */
   dir_move = 0;
   pattern2_move_count = 1;
   printf("SS GRID\n");
-
+  
   for(move_count=0;move_count<holes;++move_count)
   {
     printf("**************\n");
@@ -989,41 +1067,6 @@ int page_main()   /* setting up main page */
 {
   printf("PAGE MAIN\n");
   
-  strcpy(str[0], "I00HT*");
-
-  strcpy(str[1], "I00CX005000.000000000120011110001001*");     /* X plus */
-
-  strcpy(str[2], "I00CX005000.000000000120001110001001*");     /* X minus */
- 
-  strcpy(str[3], "I00CY005000.000000000120011110001001*");     /* Y plus */
-  
-  strcpy(str[4], "I00CY005000.000000000120001110001001*");     /* Y minus */
-  
-  strcpy(str[5], "I00CX000500.00010000012000 1110001001*");    /* HOME X */
-
-  strcpy(str[6], "I00CY000500.00010000012000 1110001001*");    /* HOME Y */
-  
-  strcpy(str[7], "I00CX000500.00010000012000 1110001001*");    /* PARK X - to be defined */  
-  
-  strcpy(str[8], "I00CY000500.00010000012000 1110001001*");    /* PARK Y - to be defined*/
-  
-  strcpy(str[9], "I00SY*");
-  
-  strcpy(str[10], "I00KX1*");
-  
-  strcpy(str[11], "I00KY1*");
-/*
-  if(RS232_OpenComport(cport_nr, bdrate, mode))
-  {
-    printf("Can not open comport\n");
-
-    return(0);
-  }
- 
-  command(0); 
-  command(10);
-  command(11);
-*/
   while(!start && pageNumber == 1)
   {
     draw();
@@ -1057,11 +1100,23 @@ int page_main()   /* setting up main page */
     SDL_RenderPresent(renderer);
     cycleCounter++;
     oldtimestamp = timestamp;
-
- 
+    
+    if(readVariableValue("I_1")==1)      /* check if start button is pressed */
+    {
+      start = 1;
+    }
   }
-  if(pageNumber == 1)
+  
+  if(pageNumber == 1)                   /* check grid setup */
   {
+    park_from_home();                   /* go from home to starting position */
+    
+    while(readVariableValue("I_1") == 0)  /*handle first spring*/
+    {
+       printf("WAITING FOR SPRING\n");
+    }
+    SDL_Delay(100);
+    
     holes = rows * columns;
     if(rows%2==0 && columns%2==0)
     {
@@ -1226,8 +1281,10 @@ int main()
   pageNumber = 1;
   passText[0] = '\0';
   init();
+  comm_init();
   program = 1;
-
+ 
+  
   /*
   home();
   */
