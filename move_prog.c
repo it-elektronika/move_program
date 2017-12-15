@@ -132,16 +132,14 @@ int comm_init()
   strcpy(str[0], "I00HT*");
 
   
-  strcpy(str[1], "I00CX005000.000000000120011110001001*");     /* X plus */
+  strcpy(str[1], "I00CX050000.000000000120001125501001*");     /* X plus */
 
-  strcpy(str[2], "I00CX005000.000000000120001110001001*");     /* X minus */
+  strcpy(str[2], "I00CX050000.000000000120011125501001*");     /* X minus */
   
-  strcpy(str[3], "I00CY005000.000000000120011110001001*");     /* Y plus */
+  strcpy(str[3], "I00CY050000.000000000120001125501001*");     /* Y plus */
   
-  strcpy(str[4], "I00CY005000.000000000120001110001001*");     /* Y minus */
+  strcpy(str[4], "I00CY050000.000000000120011125501001*");     /* Y minus */
   
-  
-
   strcpy(str[5], "I00CX000500.000100000120001110001001*");    /* HOME X */
 
   strcpy(str[6], "I00CY000500.000100000120001110001001*");    /* HOME Y */
@@ -1073,6 +1071,8 @@ int page_main()   /* setting up main page */
   
   while(!start && pageNumber == 1)
   {
+    curX = 0;
+    curY = 0;
     draw();
     eventUpdate(); 
     initVars(50, 550, 15, 15);
