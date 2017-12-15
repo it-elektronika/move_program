@@ -79,7 +79,7 @@ int i;
 int n;
 int received = 0;
 char mode[]={'8','N','1',0};
-char str[13][512];
+char str[15][512];
 unsigned char buf[4096];
 
 int pageNumber;
@@ -127,10 +127,11 @@ int init()    /* things needed to start sdl2 properly */
   return 15;
 }
 
-void comm_init()
+int comm_init()
 {
   strcpy(str[0], "I00HT*");
 
+  
   strcpy(str[1], "I00CX005000.000000000120011110001001*");     /* X plus */
 
   strcpy(str[2], "I00CX005000.000000000120001110001001*");     /* X minus */
@@ -139,6 +140,8 @@ void comm_init()
   
   strcpy(str[4], "I00CY005000.000000000120001110001001*");     /* Y minus */
   
+  
+
   strcpy(str[5], "I00CX000500.000100000120001110001001*");    /* HOME X */
 
   strcpy(str[6], "I00CY000500.000100000120001110001001*");    /* HOME Y */
@@ -165,6 +168,7 @@ void comm_init()
 
     return(0);
   }
+  return 1;
 }
 
 void freeTexture(void)  /* taking care of memory */
