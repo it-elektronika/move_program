@@ -132,13 +132,13 @@ int comm_init()
   strcpy(str[0], "I00HT*");
 
   
-  strcpy(str[1], "I00CX080000.000000000120011125501001*");     /* X plus */
+  strcpy(str[1], "I00CX080000.000000000120011120001001*");     /* X plus */
 
-  strcpy(str[2], "I00CX080000.000000000120001125501001*");     /* X minus */
+  strcpy(str[2], "I00CX080000.000000000120001120001001*");     /* X minus */
   
-  strcpy(str[3], "I00CY080000.000000000120001125501001*");     /* Y plus */
+  strcpy(str[3], "I00CY080000.000000000120001120001001*");     /* Y plus */
   
-  strcpy(str[4], "I00CY080000.000000000120011125501001*");     /* Y minus */
+  strcpy(str[4], "I00CY080000.000000000120011120001001*");     /* Y minus */
   
   strcpy(str[5], "I00CX000500.000100000120001110001001*");    /* HOME X */
 
@@ -390,33 +390,31 @@ void initVars(int x, int y, int w, int h)  /* handling struct for drawing grids 
 void command(int number)  /*  sending serial communication command */
 {
   RS232_cputs(cport_nr, str[number]);
-  n = 0;
-  buf[0] ='\0';
   received = 0;
   printf("sent: %s\n", str[number]);
-  usleep(100000);
-  /*
-  n = RS232_PollComport(cport_nr, buf, 4095);
+  //usleep(100000);
+  while(n==0)
+  {
+    n = RS232_PollComport(cport_nr, buf, 4095);
+  } 
   printf("BUFF: %d, N: %d \n", buf, n);
-  
- 
   while(received == 0)
   {
     if(n > 0)
     {
-      buf[n] = 0;   // always put a "null" at the end of a string! 
+      buf[n] = 0;   /* always put a "null" at the end of a string! */
 
       for(i=0; i < n; i++)
       {
-        if(buf[i] < 32)  // replace unreadable control-codes by dots 
+        if(buf[i] < 32)  /* replace unreadable control-codes by dots */
         {
           buf[i] = '.';
         }
       }
       printf("received %i bytes: %s\n", n, (char *)buf);
+      received = 1;
     }
-    received = 1;
-  }*/
+  }
 }
 
 
@@ -1151,7 +1149,7 @@ int page_main()   /* setting up main page */
     return 1;
   }
   SDL_RenderClear(renderer);
-  start = 1;
+  start = 0;
   return 1;
 }
 
