@@ -79,7 +79,7 @@ int i;
 int n;
 int received = 0;
 char mode[]={'8','N','1',0};
-char str[15][512];
+char str[17][512];
 unsigned char buf[4096];
 
 int pageNumber;
@@ -99,7 +99,7 @@ int init()    /* things needed to start sdl2 properly */
   }  
 
   window = SDL_CreateWindow("IT-Elektronika", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-  SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+  SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_BORDERLESS);
   
   if (window == NULL)
   {
@@ -140,25 +140,31 @@ int comm_init()
   
   strcpy(str[4], "I00CY080000.000000000120011125501001*");     /* Y minus */
   
-  strcpy(str[5], "I00CX000500.000100000120001110001001*");    /* HOME X */
+  strcpy(str[5], "I00CX002000.000100000120001110001001*");    /* HOME X */
 
-  strcpy(str[6], "I00CY000500.000100000120001110001001*");    /* HOME Y */
+  strcpy(str[6], "I00CY002000.000100000120011110001001*");    /* HOME Y */
   
-  strcpy(str[7], "I00CX000500.000100000120001110001001*");    /* PARK X - to be defined */  
   
-  strcpy(str[8], "I00CY000500.000100000120001110001001*");    /* PARK Y - to be defined*/
-  
-  strcpy(str[9], "I00SX*");
-  
-  strcpy(str[10], "I00SY*");
-  
-  strcpy(str[11], "I00KX1*");
-  
-  strcpy(str[12], "I00KY1*");
+  strcpy(str[7], "I00CX001000.000000000070011110001001*");    /* HOME X - move off sensor */
 
-  strcpy(str[13], "I00KX0*");
+  strcpy(str[8], "I00CY000500.000000000070001125501001*");    /* HOME Y -  move off sensor*/
+
   
-  strcpy(str[14], "I00KY0*");
+  strcpy(str[9], "I00CX000500.000100000120001110001001*");    /* PARK X - to be defined */  
+  
+  strcpy(str[10], "I00CY000500.000100000120001110001001*");    /* PARK Y - to be defined*/
+  
+  strcpy(str[11], "I00SX*");
+  
+  strcpy(str[12], "I00SY*");
+  
+  strcpy(str[13], "I00KX1*");
+  
+  strcpy(str[14], "I00KY1*");
+
+  strcpy(str[15], "I00KX0*");
+  
+  strcpy(str[16], "I00KY0*");
 
   if(RS232_OpenComport(cport_nr, bdrate, mode))
   {
@@ -426,7 +432,7 @@ void up()                     /*movement up */
   printf("%d:UP\n", move_count);
   
   command(3);
-  command(10);
+  command(12);
   /*
   handle_spring();
   */
@@ -437,7 +443,7 @@ void down()                    /*movement down */
   printf("%d:DOWN\n", move_count);
   
   command(4);
-  command(10);
+  command(12);
   /*
   handle_spring();
   */
@@ -448,7 +454,7 @@ void left()                    /*movement left */
   printf("%d:LEFT\n", move_count);
 
   command(2);
-  command(9);
+  command(11);
   /*
   handle_spring();
   */
@@ -459,7 +465,7 @@ void right()                   /*movement right */
   printf("%d:RIGHT\n", move_count);
   
   command(1);
-  command(9);
+  command(11);
   /*
   handle_spring();
   */
@@ -473,8 +479,9 @@ void diagonal()              /*moving diagonally */
   /*
   command(1);
   command(3);
-  command(6);*/
-  /*
+  command(11);
+  command(12);
+  
   handle_sping();
   */
 }
@@ -482,13 +489,28 @@ void diagonal()              /*moving diagonally */
 void home()                /*moving to home position */
 {
   printf("HOME\n");
-  /*
-  command(11);
-  command(12);
+  
+  command(13);
+  command(14);
    
   command(5);
   command(6);
-  */
+
+  command(11);
+  command(12);
+  while(readVariableValue("I_2") != 1 && readVariableValue("I_6") != 1 )
+  {
+    printf("HOMING\n");
+  }
+  command(15);
+  command(16);
+  
+  command(7);
+  command(8);
+  command(11);
+  command(12);
+  command(13);
+  command(14);  
 }
 
 void park_from_home()                /*movement to park position */
@@ -1080,7 +1102,7 @@ int page_main()   /* setting up main page */
     curY = 0;
     draw();
     eventUpdate(); 
-    initVars(50, 550, 15, 15);
+    initVars(50, 550, 20, 20);
     holes = rows * columns;
     drawEbGrid();
     
@@ -1097,7 +1119,7 @@ int page_main()   /* setting up main page */
     sprintf(buffY, "Y:%d", curY);
     writeText(buffY, textColor);
     render(750, 500, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-    
+    /*
     sprintf(buffRows, "VRSTICE:%d", rows);
     writeText(buffRows, textColor);
     render(750, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
@@ -1105,6 +1127,7 @@ int page_main()   /* setting up main page */
     sprintf(buffColumns, "STOLPCI:%d", columns);
     writeText(buffColumns, textColor);
     render(750, 200, NULL, 0.0, NULL, SDL_FLIP_NONE);
+    */
 
     SDL_RenderPresent(renderer);
     cycleCounter++;
@@ -1114,17 +1137,23 @@ int page_main()   /* setting up main page */
     {
       start = 1;
     }
+
+    if(readVariableValue("I_3")==1)
+    {
+      home();
+    }
+    
   }
   
   if(pageNumber == 1)                   /* check grid setup */
   {
-    park_from_home();                   /* go from home to starting position */
+    //park_from_home();                   /* go from home to starting position */
     
-    while(readVariableValue("I_1") == 0)  /*handle first spring*/
-    {
-       printf("WAITING FOR SPRING\n");
-    }
-    SDL_Delay(100);
+    //while(readVariableValue("I_1") == 0)  /*handle first spring*/
+    //{
+    //   printf("WAITING FOR SPRING\n");
+    //}
+    //SDL_Delay(100);
     
     holes = rows * columns;
     if(rows%2==0 && columns%2==0)
@@ -1151,7 +1180,7 @@ int page_main()   /* setting up main page */
     return 1;
   }
   SDL_RenderClear(renderer);
-  start = 1;
+  start = 0;
   return 1;
 }
 
@@ -1172,8 +1201,8 @@ void page_select() /* setting up selection page */
   draw();
   eventUpdate();
   admin(945, 0, 75, 50, 1);
-  button(200, 200, 300, 100, "SETTINGS", 4); 
-  button(600, 200, 300, 100, "MANUAL MODE", 5); 
+  //button(200, 200, 300, 100, "SETTINGS", 4); 
+  button(400, 200, 300, 100, "MANUAL MODE", 5); 
   SDL_RenderPresent(renderer);
   SDL_RenderClear(renderer);
   cycleCounter++;
@@ -1219,7 +1248,7 @@ void page_manual() /*setting up manual page*/
 {
   draw();
   eventUpdate();
-  admin(945, 0, 75, 50, 3);
+  admin(945, 0, 75, 50, 1);
   up_button(500, 100);
   down_button(500, 250);
   left_button(300, 250);
@@ -1272,7 +1301,7 @@ int main()
   
   printf("**************\n");
   printf("MOVE PROGRAM\n");
-
+  printf("************\n");
 
   for(i = 0; i < 2; ++i)
   {
