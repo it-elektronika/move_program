@@ -110,11 +110,11 @@ uint8_t readVariableValue(const char *pszVariableName)
         rc = piControlGetBitValue(&sPIValue);
         if (rc < 0)
 	{        
-        printf("Get bit error\n");
+          //printf("Get bit error\n");
         }
         else
         {
-        printf("Get bit value: %d at offset: %d\n", sPIValue.i8uValue, sPIValue.i16uAddress);
+         //printf("Get bit value: %d at offset: %d\n", sPIValue.i8uValue, sPIValue.i16uAddress);
         }
         
     }

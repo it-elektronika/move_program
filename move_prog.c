@@ -79,7 +79,7 @@ int i;
 int n;
 int received = 0;
 char mode[]={'8','N','1',0};
-char str[17][512];
+char str[20][512];
 unsigned char buf[4096];
 
 int pageNumber;
@@ -130,7 +130,6 @@ int init()    /* things needed to start sdl2 properly */
 int comm_init()
 {
   strcpy(str[0], "I00HT*");
-
   
   strcpy(str[1], "I00CX080000.000000000120011125501001*");     /* X plus */
 
@@ -140,19 +139,19 @@ int comm_init()
   
   strcpy(str[4], "I00CY080000.000000000120011125501001*");     /* Y minus */
   
-  strcpy(str[5], "I00CX002000.000100000120001110001001*");    /* HOME X */
+  strcpy(str[5], "I00CX003000.000100000120001110001001*");    /* HOME X */
 
-  strcpy(str[6], "I00CY002000.000100000120011110001001*");    /* HOME Y */
+  strcpy(str[6], "I00CY003000.000100000120011110001001*");    /* HOME Y */
   
   
-  strcpy(str[7], "I00CX001000.000000000070011110001001*");    /* HOME X - move off sensor */
+  strcpy(str[7], "I00CX055500.000000000020011110001001*");    /* HOME X - move off sensor */
 
-  strcpy(str[8], "I00CY000500.000000000070001125501001*");    /* HOME Y -  move off sensor*/
+  strcpy(str[8], "I00CY055500.000000000020001110001001*");    /* HOME Y -  move off sensor*/
 
   
   strcpy(str[9], "I00CX000500.000100000120001110001001*");    /* PARK X - to be defined */  
   
-  strcpy(str[10], "I00CY000500.000100000120001110001001*");    /* PARK Y - to be defined*/
+  strcpy(str[10],"I00CY000500.000100000120001110001001*");    /* PARK Y - to be defined*/
   
   strcpy(str[11], "I00SX*");
   
@@ -165,6 +164,13 @@ int comm_init()
   strcpy(str[15], "I00KX0*");
   
   strcpy(str[16], "I00KY0*");
+  
+  strcpy(str[17], "I00TX*");
+  
+  strcpy(str[18], "I00TY*");
+
+  strcpy(str[19], "N*");
+
 
   if(RS232_OpenComport(cport_nr, bdrate, mode))
   {
@@ -401,11 +407,11 @@ void command(int number)  /*  sending serial communication command */
   received = 0;
   printf("sent: %s\n", str[number]);
   usleep(100000);
-  /*
+  
   n = RS232_PollComport(cport_nr, buf, 4095);
   printf("BUFF: %d, N: %d \n", buf, n);
   
- 
+ /*
   while(received == 0)
   {
     if(n > 0)
@@ -422,7 +428,7 @@ void command(int number)  /*  sending serial communication command */
       printf("received %i bytes: %s\n", n, (char *)buf);
     }
     received = 1;
-  }*/
+  } */
 }
 
 
@@ -488,29 +494,52 @@ void diagonal()              /*moving diagonally */
 
 void home()                /*moving to home position */
 {
-  printf("HOME\n");
+  printf("HOMING\n");
+  printf("*******\n");
+  int x_triggered = 0;
+  int y_triggered = 0;
+  command(13);            /* enable x limit */
+  //command(16);
+  command(5);             /* x home move */
+  command(11);            /* start x home move */
   
-  command(13);
-  command(14);
-   
-  command(5);
-  command(6);
-
-  command(11);
-  command(12);
-  while(readVariableValue("I_2") != 1 && readVariableValue("I_6") != 1 )
+  while(x_triggered == 0)
   {
-    printf("HOMING\n");
+    readVariableValue("I_2");
+    
+    if(readVariableValue("I_2") == 1)
+    {
+      x_triggered = 1;
+    }
   }
-  command(15);
-  command(16);
   
-  command(7);
-  command(8);
-  command(11);
-  command(12);
-  command(13);
-  command(14);  
+  usleep(1000000);
+  command(15);   
+  command(7);      /* x move off limit */
+  command(11);     /* start x move off limit */ 
+  //usleep(1000000);
+  
+  command(14);     /* enable y limit */
+ // command(15);
+  command(6);      /* y home move */
+  command(12);     /* start y home move */
+  
+  while(y_triggered == 0)
+  {
+    readVariableValue("I_6");
+    
+    if(readVariableValue("I_6") == 1)
+    {
+      y_triggered = 1;
+    }
+  }
+  usleep(1000000);    
+  command(16);     /* disable y-limit */
+  command(8);      /* y move off limit */
+  command(12);     /* start y move off limit */
+  //usleep(1000000);
+  command(13);     /* enable x-limit */
+  command(14);     /* enable y-limit */
 }
 
 void park_from_home()                /*movement to park position */
@@ -812,8 +841,6 @@ void ll_grid()  /* start movement procedure for odd value grid */
   pattern2_move_count = 1;
   for(move_count=0;move_count<holes;move_count++)
   {
-    printf("%d\n", readVariableValue("I_1"));
-    printf("%d\n", move_count);
     draw();	
     drawEbGrid();
     
@@ -1321,8 +1348,7 @@ int main()
   init();
   comm_init();
   program = 1;
- 
-  
+  command(19);
   /*
   home();
   */
