@@ -139,14 +139,14 @@ int comm_init()
   
   strcpy(str[4], "I00CY080000.000000000120011125501001*");     /* Y minus */
   
-  strcpy(str[5], "I00CX003000.000100000120001110001001*");    /* HOME X */
+  strcpy(str[5], "I00CX000550.000100000120001110001001*");    /* HOME X */
 
-  strcpy(str[6], "I00CY003000.000100000120011110001001*");    /* HOME Y */
+  strcpy(str[6], "I00CY000550.000100000120011110001001*");    /* HOME Y */
   
   
-  strcpy(str[7], "I00CX055500.000000000020011110001001*");    /* HOME X - move off sensor */
+  strcpy(str[7], "I00CX020000.000000000020011110001001*");    /* HOME X - move off sensor */
 
-  strcpy(str[8], "I00CY055500.000000000020001110001001*");    /* HOME Y -  move off sensor*/
+  strcpy(str[8], "I00CY020000.000000000020001110001001*");    /* HOME Y -  move off sensor*/
 
   
   strcpy(str[9], "I00CX000500.000100000120001110001001*");    /* PARK X - to be defined */  
@@ -411,7 +411,7 @@ void command(int number)  /*  sending serial communication command */
   n = RS232_PollComport(cport_nr, buf, 4095);
   printf("BUFF: %d, N: %d \n", buf, n);
   
- /*
+ 
   while(received == 0)
   {
     if(n > 0)
@@ -428,7 +428,7 @@ void command(int number)  /*  sending serial communication command */
       printf("received %i bytes: %s\n", n, (char *)buf);
     }
     received = 1;
-  } */
+  } 
 }
 
 
@@ -499,7 +499,7 @@ void home()                /*moving to home position */
   int x_triggered = 0;
   int y_triggered = 0;
   command(13);            /* enable x limit */
-  //command(16);
+  command(16);
   command(5);             /* x home move */
   command(11);            /* start x home move */
   
@@ -517,7 +517,7 @@ void home()                /*moving to home position */
   command(15);   
   command(7);      /* x move off limit */
   command(11);     /* start x move off limit */ 
-  //usleep(1000000);
+  usleep(1000000);
   
   command(14);     /* enable y limit */
  // command(15);
