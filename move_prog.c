@@ -37,6 +37,7 @@ struct editbox
 
 int PiControlHandle_g = -1;
 int start = 0;
+int stop = 0;
 int cycleCounter = 0;
 int cycleCheck = 0;
 
@@ -79,7 +80,7 @@ int i;
 int n;
 int received = 0;
 char mode[]={'8','N','1',0};
-char str[20][512];
+char str[21][512];
 unsigned char buf[4096];
 
 int pageNumber;
@@ -144,9 +145,9 @@ int comm_init()
   strcpy(str[6], "I00CY000550.000100000120011110001001*");    /* HOME Y */
   
   
-  strcpy(str[7], "I00CX020000.000000000020011110001001*");    /* HOME X - move off sensor */
+  strcpy(str[7], "I00CX002000.000000000020011110001001*");    /* HOME X - move off sensor */
 
-  strcpy(str[8], "I00CY020000.000000000020001110001001*");    /* HOME Y -  move off sensor*/
+  strcpy(str[8], "I00CY002000.000000000020001110001001*");    /* HOME Y -  move off sensor*/
 
   
   strcpy(str[9], "I00CX000500.000100000120001110001001*");    /* PARK X - to be defined */  
@@ -170,6 +171,8 @@ int comm_init()
   strcpy(str[18], "I00TY*");
 
   strcpy(str[19], "N*");
+
+  strcpy(str[20], "I00TA*");
 
 
   if(RS232_OpenComport(cport_nr, bdrate, mode))
@@ -411,7 +414,7 @@ void command(int number)  /*  sending serial communication command */
   n = RS232_PollComport(cport_nr, buf, 4095);
   printf("BUFF: %d, N: %d \n", buf, n);
   
- 
+ /*
   while(received == 0)
   {
     if(n > 0)
@@ -428,7 +431,7 @@ void command(int number)  /*  sending serial communication command */
       printf("received %i bytes: %s\n", n, (char *)buf);
     }
     received = 1;
-  } 
+  }*/ 
 }
 
 
@@ -499,7 +502,7 @@ void home()                /*moving to home position */
   int x_triggered = 0;
   int y_triggered = 0;
   command(13);            /* enable x limit */
-  command(16);
+  //command(16);
   command(5);             /* x home move */
   command(11);            /* start x home move */
   
@@ -510,11 +513,13 @@ void home()                /*moving to home position */
     if(readVariableValue("I_2") == 1)
     {
       x_triggered = 1;
+      printf("X - triggered\n");
     }
   }
   
-  usleep(1000000);
+  usleep(200000);
   command(15);   
+  //usleep(1000000);
   command(7);      /* x move off limit */
   command(11);     /* start x move off limit */ 
   usleep(1000000);
@@ -531,15 +536,23 @@ void home()                /*moving to home position */
     if(readVariableValue("I_6") == 1)
     {
       y_triggered = 1;
+      printf("Y - limit triggered\n");
     }
   }
-  usleep(1000000);    
+  usleep(200000);    
   command(16);     /* disable y-limit */
+  //usleep(1000000);
   command(8);      /* y move off limit */
   command(12);     /* start y move off limit */
   //usleep(1000000);
   command(13);     /* enable x-limit */
   command(14);     /* enable y-limit */
+  curX = 0;
+  curY = 0;
+  move_count = 0;
+  SDL_RenderPresent(renderer);
+  SDL_RenderClear(renderer);
+
 }
 
 void park_from_home()                /*movement to park position */
@@ -601,7 +614,8 @@ void up_button(int x,  int y)    /* drawing button to go up */
   
   if(touchLocation.x > x && touchLocation.x < x+100 && touchLocation.y > y && touchLocation.y < y + 100 && timestamp > oldtimestamp)
   {
-    up();
+    down();
+    curY++;
   }
 }
 
@@ -633,7 +647,8 @@ void down_button(int x,  int y)       /* drawing button to go down */
 
   if(touchLocation.x > x && touchLocation.x < x+100 && touchLocation.y > y && touchLocation.y < y + 100 && timestamp > oldtimestamp)
   {
-    down();
+    up();
+    curX++;
   }
 }
 
@@ -666,7 +681,8 @@ void left_button(int x,  int y)              /* drawing button to go left */
 
   if(touchLocation.x > x && touchLocation.x < x+100 && touchLocation.y > y && touchLocation.y < y + 100 && timestamp > oldtimestamp)
   {
-    left();
+    right();
+    curX--;
   }
 }
 
@@ -698,7 +714,8 @@ void right_button(int x,  int y)       /* drawing button to go right */
 
   if(touchLocation.x > x && touchLocation.x < x+100 && touchLocation.y > y && touchLocation.y < y + 100 && timestamp > oldtimestamp)
   {
-    right();
+    left();
+    curX--;
   }
 }
 
@@ -859,6 +876,19 @@ void ll_grid()  /* start movement procedure for odd value grid */
     SDL_RenderPresent(renderer);
     SDL_RenderClear(renderer);
     SDL_Delay(1);
+    
+    if(readVariableValue("I_5")==1)
+    {
+      printf("STOP\n");
+      stop = 1;
+    }
+    if(stop == 1)
+    {
+      command(20);
+      stop = 0;
+      break;
+    }
+    
     if(move_count == 0)
     {
       diagonal();
@@ -964,17 +994,23 @@ void ss_grid()/* start movement procedure for even value grid */
     writeText(buffY, textColor);
     render(750, 500, NULL, 0.0, NULL, SDL_FLIP_NONE);
     
-    sprintf(buffRows, "VRSTICE:%d", rows);
-    writeText(buffRows, textColor);
-    render(750, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
     
-    sprintf(buffColumns, "STOLPCI:%d", columns);
-    writeText(buffColumns, textColor);
-    render(750, 200, NULL, 0.0, NULL, SDL_FLIP_NONE);
-   
     SDL_RenderPresent(renderer);
     SDL_RenderClear(renderer);
     
+    
+    if(readVariableValue("I_5")==1)
+    {
+      printf("STOP\n");
+      stop = 1;
+    }
+    if(stop == 1)
+    {
+      command(20);
+      stop = 0;
+      break;
+    }
+
     if(move_count < columns-1)
     {
       right();
@@ -1037,6 +1073,8 @@ void ls_grid()               /* start movement procedure for odd and even value 
 
   for(move_count=0;move_count<holes;++move_count)
   {
+
+    
     printf("**************\n");
     printf("%d\n", move_count);
     draw();	
@@ -1054,16 +1092,22 @@ void ls_grid()               /* start movement procedure for odd and even value 
     writeText(buffY, textColor);
     render(750, 500, NULL, 0.0, NULL, SDL_FLIP_NONE);
     
-    sprintf(buffRows, "VRSTICE:%d", rows);
-    writeText(buffRows, textColor);
-    render(750, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-    
-    sprintf(buffColumns, "STOLPCI:%d", columns);
-    writeText(buffColumns, textColor);
-    render(750, 200, NULL, 0.0, NULL, SDL_FLIP_NONE);
    
     SDL_RenderPresent(renderer);
     SDL_RenderClear(renderer);
+ 
+    
+    if(readVariableValue("I_5")==1)
+    {
+      printf("STOP\n");
+      stop = 1;
+    }
+    if(stop == 1)
+    {
+      command(20);
+      stop = 0;
+      break;
+    }
     
     if(move_count < rows-1)
     {
@@ -1125,8 +1169,8 @@ int page_main()   /* setting up main page */
   
   while(!start && pageNumber == 1)
   {
-    curX = 0;
-    curY = 0;
+    //curX = 0;
+    //curY = 0;
     draw();
     eventUpdate(); 
     initVars(50, 550, 20, 20);
@@ -1169,6 +1213,7 @@ int page_main()   /* setting up main page */
     {
       home();
     }
+    
     
   }
   
@@ -1271,7 +1316,7 @@ void page_settings() /*setting up settings page*/
   oldtimestamp = timestamp;
 }
 
-void page_manual() /*setting up manual page*/
+int page_manual() /*setting up manual page*/
 {
   draw();
   eventUpdate();
@@ -1285,6 +1330,14 @@ void page_manual() /*setting up manual page*/
   SDL_RenderClear(renderer);
   cycleCounter++;
   oldtimestamp = timestamp;
+  program = 0;
+  SDL_DestroyRenderer(renderer);
+  SDL_DestroyWindow(window);
+  SDL_DestroyTexture(texture);
+  TTF_Quit();
+  SDL_Quit();
+   
+  return 1;
 }
 
 void load_page(int pageNumber) /*handling loading pages */
@@ -1349,9 +1402,8 @@ int main()
   comm_init();
   program = 1;
   command(19);
-  /*
+  
   home();
-  */
  
   while(program == 1)
   {
@@ -1360,6 +1412,7 @@ int main()
   
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
+  SDL_DestroyTexture(texture);
   TTF_Quit();
   SDL_Quit(); 
   return 1;
