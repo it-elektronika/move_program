@@ -1,3 +1,9 @@
+/*
+when in run mode output signal
+
+*/
+
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
@@ -76,7 +82,7 @@ int holes;
 
 int cport_nr=16;        /* /dev/ttyS0 (COM1 on windows) */
 int bdrate=115200;       /* 9600 baud */
-int i;
+
 int n;
 int received = 0;
 char mode[]={'8','N','1',0};
@@ -412,7 +418,7 @@ void command(int number)  /*  sending serial communication command */
   usleep(100000);
   
   n = RS232_PollComport(cport_nr, buf, 4095);
-  printf("BUFF: %d, N: %d \n", buf, n);
+  //printf("BUFF: %d, N: %d \n", buf, n);
   
  /*
   while(received == 0)
@@ -497,10 +503,16 @@ void diagonal()              /*moving diagonally */
 
 void home()                /*moving to home position */
 {
-  printf("HOMING\n");
-  printf("*******\n");
   int x_triggered = 0;
   int y_triggered = 0;
+  printf("HOMING\n");
+  printf("*******\n");
+  
+  writeText("HOMING", textColor);
+  render(750, 100, NULL, 0.0, NULL, SDL_FLIP_NONE);
+  SDL_RenderPresent(renderer);
+  SDL_RenderClear(renderer);
+  
   command(13);            /* enable x limit */
   //command(16);
   command(5);             /* x home move */
@@ -1169,8 +1181,7 @@ int page_main()   /* setting up main page */
   
   while(!start && pageNumber == 1)
   {
-    //curX = 0;
-    //curY = 0;
+   
     draw();
     eventUpdate(); 
     initVars(50, 550, 20, 20);
@@ -1190,16 +1201,7 @@ int page_main()   /* setting up main page */
     sprintf(buffY, "Y:%d", curY);
     writeText(buffY, textColor);
     render(750, 500, NULL, 0.0, NULL, SDL_FLIP_NONE); 
-    /*
-    sprintf(buffRows, "VRSTICE:%d", rows);
-    writeText(buffRows, textColor);
-    render(750, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
     
-    sprintf(buffColumns, "STOLPCI:%d", columns);
-    writeText(buffColumns, textColor);
-    render(750, 200, NULL, 0.0, NULL, SDL_FLIP_NONE);
-    */
-
     SDL_RenderPresent(renderer);
     cycleCounter++;
     oldtimestamp = timestamp;
@@ -1320,7 +1322,7 @@ int page_manual() /*setting up manual page*/
 {
   draw();
   eventUpdate();
-  admin(945, 0, 75, 50, 1);
+  admin(945, 0, 75, 50, 6);
   up_button(500, 100);
   down_button(500, 250);
   left_button(300, 250);
@@ -1330,14 +1332,14 @@ int page_manual() /*setting up manual page*/
   SDL_RenderClear(renderer);
   cycleCounter++;
   oldtimestamp = timestamp;
-  program = 0;
-  SDL_DestroyRenderer(renderer);
-  SDL_DestroyWindow(window);
-  SDL_DestroyTexture(texture);
-  TTF_Quit();
-  SDL_Quit();
-   
-  return 1;
+  
+}
+
+void page_redirect()
+{
+  curX=0;
+  curY=0;
+  pageNumber=1; 
 }
 
 void load_page(int pageNumber) /*handling loading pages */
@@ -1363,10 +1365,14 @@ void load_page(int pageNumber) /*handling loading pages */
     case 5:
       page_manual();
       break;
+    
+    case 6:
+      page_redirect();
+      break;
   }
 }
 
-int main()
+int main(int argc, char* args[])
 {
   FILE *fp;  
   char *line;
@@ -1379,14 +1385,14 @@ int main()
      
   fp = fopen("/home/pi/move_program/param.txt", "r");
   
-  printf("**************\n");
-  printf("MOVE PROGRAM\n");
-  printf("************\n");
+  //printf("**************\n");
+  //printf("MOVE PROGRAM\n");
+  //printf("************\n");
 
   for(i = 0; i < 2; ++i)
   {
     getline(&line, &len, fp);
-    printf("%s", line);
+    //printf("%s", line);
     if(i == 0)
     {
       rows = atoi(line);
@@ -1399,11 +1405,11 @@ int main()
   pageNumber = 1;
   passText[0] = '\0';
   init();
-  comm_init();
+  //comm_init();
   program = 1;
-  command(19);
+  //command(19);
   
-  home();
+  //home();
  
   while(program == 1)
   {
