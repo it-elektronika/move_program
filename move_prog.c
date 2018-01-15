@@ -18,6 +18,7 @@ when in run mode output signal
 #define SCREEN_HEIGHT 600
 #define DROWSAPP "71395"
 
+
 SDL_Renderer *renderer = NULL;
 SDL_Window *window = NULL;
 SDL_Texture *texture = NULL;
@@ -160,25 +161,25 @@ int comm_init()
   
   strcpy(str[10],"I00CY000500.000100000120001110001001*");    /* PARK Y - to be defined*/
   
-  strcpy(str[11], "I00SX*");
+  strcpy(str[11], "I00SX*");  /* START X AXIS */
   
-  strcpy(str[12], "I00SY*");
+  strcpy(str[12], "I00SY*");  /* START Y AXIS */
   
-  strcpy(str[13], "I00KX1*");
+  strcpy(str[13], "I00KX1*"); /* ENABLE X limit switch */
   
-  strcpy(str[14], "I00KY1*");
+  strcpy(str[14], "I00KY1*"); /* ENABLE Y limit switch */
 
-  strcpy(str[15], "I00KX0*");
+  strcpy(str[15], "I00KX0*"); /* DISABLE X limit switch */
   
-  strcpy(str[16], "I00KY0*");
+  strcpy(str[16], "I00KY0*"); /* DISABLE Y limit switch */
   
-  strcpy(str[17], "I00TX*");
+  strcpy(str[17], "I00TX*"); /* STOP Y */
   
-  strcpy(str[18], "I00TY*");
+  strcpy(str[18], "I00TY*"); /* STOP X */
 
-  strcpy(str[19], "N*");
+  strcpy(str[19], "N*"); /* RESET driver */
 
-  strcpy(str[20], "I00TA*");
+  strcpy(str[20], "I00TA*");  /* STOP all axes*/
 
 
   if(RS232_OpenComport(cport_nr, bdrate, mode))
@@ -319,7 +320,7 @@ void eventUpdate()   /* handling touch events */
       program = 0;
     }
     
-    /*
+    /* TO BE DELETED
     if(event.type == SDL_MOUSEBUTTONDOWN)  
     {
       
@@ -336,7 +337,10 @@ void eventUpdate()   /* handling touch events */
   }
 }
 
-void plusRow()  /* plus button to increment value of rows */
+
+/* CONTROLS FOR SETTINGS PAGE 
+
+void plusRow()  // plus button to increment value of rows /
 {
   writeText("+", textColor);
   render(950, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
@@ -347,7 +351,7 @@ void plusRow()  /* plus button to increment value of rows */
   } 
 }
 
-void minusRow()   /* minus button to decrement value of rows */
+void minusRow()   // minus button to decrement value of rows /
 {
   writeText("-", textColor);
   render(650, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
@@ -358,7 +362,7 @@ void minusRow()   /* minus button to decrement value of rows */
   } 
 }
 
-void plusColumn() /* plus button to increment value of columns */
+void plusColumn() // plus button to increment value of columns /
 {
   writeText("+", textColor);
   render(950, 200, NULL, 0.0, NULL, SDL_FLIP_NONE); 
@@ -369,7 +373,7 @@ void plusColumn() /* plus button to increment value of columns */
   }
 }
 
-void minusColumn() /* minus button to decrement value of rows */
+void minusColumn() // minus button to decrement value of rows /
 {
   writeText("-", textColor);
   render(650, 200, NULL, 0.0, NULL, SDL_FLIP_NONE); 
@@ -379,6 +383,9 @@ void minusColumn() /* minus button to decrement value of rows */
     columns--;
   }
 }
+*/
+
+
 
 void initVars(int x, int y, int w, int h)  /* handling struct for drawing grids */
 {
@@ -418,7 +425,6 @@ void command(int number)  /*  sending serial communication command */
   usleep(100000);
   
   n = RS232_PollComport(cport_nr, buf, 4095);
-  //printf("BUFF: %d, N: %d \n", buf, n);
   
  /*
   while(received == 0)
@@ -514,13 +520,13 @@ void home()                /*moving to home position */
   SDL_RenderClear(renderer);
   
   command(13);            /* enable x limit */
-  //command(16);
+  /*command(16);*/
   command(5);             /* x home move */
   command(11);            /* start x home move */
   
   while(x_triggered == 0)
   {
-    readVariableValue("I_2");
+    readVariableValue("I_2");   /* read X - limit switch */
     
     if(readVariableValue("I_2") == 1)
     {
@@ -531,19 +537,19 @@ void home()                /*moving to home position */
   
   usleep(200000);
   command(15);   
-  //usleep(1000000);
+  /*usleep(1000000)*/;
   command(7);      /* x move off limit */
   command(11);     /* start x move off limit */ 
   usleep(1000000);
   
   command(14);     /* enable y limit */
- // command(15);
+  /* command(15);*/
   command(6);      /* y home move */
   command(12);     /* start y home move */
   
   while(y_triggered == 0)
   {
-    readVariableValue("I_6");
+    readVariableValue("I_6"); /* read Y - limit switch */
     
     if(readVariableValue("I_6") == 1)
     {
@@ -553,10 +559,10 @@ void home()                /*moving to home position */
   }
   usleep(200000);    
   command(16);     /* disable y-limit */
-  //usleep(1000000);
+  /*usleep(1000000);*/
   command(8);      /* y move off limit */
   command(12);     /* start y move off limit */
-  //usleep(1000000);
+  /*usleep(1000000);*/
   command(13);     /* enable x-limit */
   command(14);     /* enable y-limit */
   curX = 0;
@@ -588,6 +594,7 @@ void park_from_work()
   */
 }
 
+/*
 void start_procedure()
 {
   home();
@@ -596,6 +603,7 @@ void start_procedure()
     printf("GOING HOME\n"); 
   }
 }
+*/
 
 void up_button(int x,  int y)    /* drawing button to go up */
 {
@@ -817,7 +825,7 @@ void keypad(int x, int y, int w, int h)  /* drawing keypad for entering password
           printf("RET: %d\n", ret);
           printf("%s equal to %s\n", DROWSAPP, passText);
           printf("ACCESS GRANTED\n");
-          pageNumber = 3;
+          pageNumber = 5;  /* move to page_manual */
         }
         memset(&passText[0], 0, 5);
       }
@@ -854,8 +862,9 @@ void admin(int x, int y, int w, int h, int gotoNum) /* move to admin area button
 
 void handle_spring()
 {
-  while(readVariableValue("I_1") == 0 && move_count != holes)  // do not wait at the last hole. it was filled in the beggining //
-  {
+  while(readVariableValue("I_1") == 0 && move_count != holes)                /* read spring sensor */
+  {                                                                          /* do not wait at the last hole. it was filled in the beggining */
+
     printf("WAITING FOR SPRING\n");
   }
   writeVariableValue("O_1", 1);
@@ -889,7 +898,7 @@ void ll_grid()  /* start movement procedure for odd value grid */
     SDL_RenderClear(renderer);
     SDL_Delay(1);
     
-    if(readVariableValue("I_5")==1)
+    if(readVariableValue("I_5")==1)   /* read STOP button value */
     {
       printf("STOP\n");
       stop = 1;
@@ -1011,7 +1020,7 @@ void ss_grid()/* start movement procedure for even value grid */
     SDL_RenderClear(renderer);
     
     
-    if(readVariableValue("I_5")==1)
+    if(readVariableValue("I_5")==1) /* read STOP button value */
     {
       printf("STOP\n");
       stop = 1;
@@ -1109,7 +1118,7 @@ void ls_grid()               /* start movement procedure for odd and even value 
     SDL_RenderClear(renderer);
  
     
-    if(readVariableValue("I_5")==1)
+    if(readVariableValue("I_5")==1)  /* read STOP button value */
     {
       printf("STOP\n");
       stop = 1;
@@ -1206,12 +1215,12 @@ int page_main()   /* setting up main page */
     cycleCounter++;
     oldtimestamp = timestamp;
     
-    if(readVariableValue("I_1")==1)      /* check if start button is pressed */
+    if(readVariableValue("I_1")==1)      /* read START button value */
     {
       start = 1;
     }
 
-    if(readVariableValue("I_3")==1)
+    if(readVariableValue("I_3")==1)     /* read HOME button value */
     {
       home();
     }
@@ -1221,15 +1230,21 @@ int page_main()   /* setting up main page */
   
   if(pageNumber == 1)                   /* check grid setup */
   {
-    //park_from_home();                   /* go from home to starting position */
+
+    /*
+    //park_from_home();                   //go from home to starting position/ 
     
-    //while(readVariableValue("I_1") == 0)  /*handle first spring*/
+    //while(readVariableValue("I_1") == 0)  //handle first spring//
     //{
     //   printf("WAITING FOR SPRING\n");
     //}
     //SDL_Delay(100);
-    
+    */
+
+    /* PLACING MODE SELECTOR */
+
     holes = rows * columns;
+    
     if(rows%2==0 && columns%2==0)
     {
       printf("SODO\n");
@@ -1250,6 +1265,8 @@ int page_main()   /* setting up main page */
       printf("LIHO\n");
       ll_grid();
     }
+
+    
     start = 0;
     return 1;
   }
@@ -1275,7 +1292,7 @@ void page_select() /* setting up selection page */
   draw();
   eventUpdate();
   admin(945, 0, 75, 50, 1);
-  //button(200, 200, 300, 100, "SETTINGS", 4); 
+  button(200, 200, 300, 100, "SETTINGS", 4); 
   button(400, 200, 300, 100, "MANUAL MODE", 5); 
   SDL_RenderPresent(renderer);
   SDL_RenderClear(renderer);
@@ -1283,7 +1300,8 @@ void page_select() /* setting up selection page */
   oldtimestamp = timestamp;
 }
 
-void page_settings() /*setting up settings page*/
+/*
+void page_settings() //setting up settings page//
 {
   draw();
   eventUpdate();
@@ -1317,8 +1335,8 @@ void page_settings() /*setting up settings page*/
   cycleCounter++;
   oldtimestamp = timestamp;
 }
-
-int page_manual() /*setting up manual page*/
+*/
+void page_manual() /*setting up manual page*/
 {
   draw();
   eventUpdate();
@@ -1359,9 +1377,9 @@ void load_page(int pageNumber) /*handling loading pages */
       break;
 
     case 4:
-      page_settings();
+     /* page_settings();
       break;
-
+     */
     case 5:
       page_manual();
       break;
@@ -1372,7 +1390,7 @@ void load_page(int pageNumber) /*handling loading pages */
   }
 }
 
-int main(int argc, char* args[])
+int main()
 {
   FILE *fp;  
   char *line;
@@ -1382,17 +1400,16 @@ int main(int argc, char* args[])
   i = 0;
   line = NULL;
   len = 0;
-     
   fp = fopen("/home/pi/move_program/param.txt", "r");
   
-  //printf("**************\n");
-  //printf("MOVE PROGRAM\n");
-  //printf("************\n");
+  printf("**************\n");
+  printf("MOVE PROGRAM\n");
+  printf("************\n");
 
   for(i = 0; i < 2; ++i)
   {
     getline(&line, &len, fp);
-    //printf("%s", line);
+    printf("%s", line);
     if(i == 0)
     {
       rows = atoi(line);
@@ -1405,11 +1422,11 @@ int main(int argc, char* args[])
   pageNumber = 1;
   passText[0] = '\0';
   init();
-  //comm_init();
+  /*comm_init();*/
   program = 1;
-  //command(19);
+  /*command(19);*/
   
-  //home();
+  /*home();*/
  
   while(program == 1)
   {
