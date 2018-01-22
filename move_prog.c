@@ -526,9 +526,9 @@ void home()                /*moving to home position */
   
   while(x_triggered == 0)
   {
-    readVariableValue("I_2");   /* read X - limit switch */
+    readVariableValue("I_5");   /* read X - limit switch */
     
-    if(readVariableValue("I_2") == 1)
+    if(readVariableValue("I_5") == 1)
     {
       x_triggered = 1;
       printf("X - triggered\n");
@@ -825,7 +825,7 @@ void keypad(int x, int y, int w, int h)  /* drawing keypad for entering password
           printf("RET: %d\n", ret);
           printf("%s equal to %s\n", DROWSAPP, passText);
           printf("ACCESS GRANTED\n");
-          pageNumber = 5;  /* move to page_manual */
+          pageNumber = 3;  /* move to page_manual */
         }
         memset(&passText[0], 0, 5);
       }
@@ -898,7 +898,7 @@ void ll_grid()  /* start movement procedure for odd value grid */
     SDL_RenderClear(renderer);
     SDL_Delay(1);
     
-    if(readVariableValue("I_5")==1)   /* read STOP button value */
+    if(readVariableValue("I_3")==1)   /* read STOP button value */
     {
       printf("STOP\n");
       stop = 1;
@@ -1020,7 +1020,7 @@ void ss_grid()/* start movement procedure for even value grid */
     SDL_RenderClear(renderer);
     
     
-    if(readVariableValue("I_5")==1) /* read STOP button value */
+    if(readVariableValue("I_3")==1) /* read STOP button value */
     {
       printf("STOP\n");
       stop = 1;
@@ -1118,7 +1118,7 @@ void ls_grid()               /* start movement procedure for odd and even value 
     SDL_RenderClear(renderer);
  
     
-    if(readVariableValue("I_5")==1)  /* read STOP button value */
+    if(readVariableValue("I_3")==1)  /* read STOP button value */
     {
       printf("STOP\n");
       stop = 1;
@@ -1215,12 +1215,12 @@ int page_main()   /* setting up main page */
     cycleCounter++;
     oldtimestamp = timestamp;
     
-    if(readVariableValue("I_1")==1)      /* read START button value */
+    if(readVariableValue("I_2")==1)      /* read START button value */
     {
       start = 1;
     }
 
-    if(readVariableValue("I_3")==1)     /* read HOME button value */
+    if(readVariableValue("I_4")==1)     /* read HOME button value */
     {
       home();
     }
@@ -1280,7 +1280,7 @@ void page_pass() /* setting up password page */
   draw();
   eventUpdate(); 
   keypad(400, 200, 100, 100);
-  admin(945, 0, 75, 50, 1);
+  admin(945, 0, 75, 50, 3);
   SDL_RenderPresent(renderer);
   SDL_RenderClear(renderer);
   cycleCounter++;
@@ -1292,42 +1292,177 @@ void page_select() /* setting up selection page */
   draw();
   eventUpdate();
   admin(945, 0, 75, 50, 1);
-  button(200, 200, 300, 100, "SETTINGS", 4); 
-  button(400, 200, 300, 100, "MANUAL MODE", 5); 
+  button(400, 100, 300, 100, "SETTINGS", 4); 
+  button(400, 300, 300, 100, "MANUAL MODE", 5); 
   SDL_RenderPresent(renderer);
   SDL_RenderClear(renderer);
   cycleCounter++;
   oldtimestamp = timestamp;
 }
 
-/*
+
 void page_settings() //setting up settings page//
 {
   draw();
   eventUpdate();
   admin(945, 0, 75, 50, 3);
 
-  initVars(50, 550, 15, 15);
-  holes = rows * columns;
-  drawEbGrid();
+  //initVars(50, 550, 15, 15);
+  //holes = rows * columns;
+  //drawEbGrid();
     
+  char input1[20];
+  char input2[20];
+  char input3[20];
+  char input4[20];
+  char input5[20];
+  char input6[20];
+  char input7[20];
+  char input8[20];
+  char input9[20];
+  char input10[20];
+  char input11[20];
+  char input12[20];
+  char input13[20];
+  char input14[20];
+
+  char output1[20];
+  char output2[20];
+  char output3[20];
+  char output4[20];
+  char output5[20];
+  char output6[20];
+  char output7[20];
+  char output8[20];
+  char output9[20];
+  char output10[20];
+  char output11[20];
+  char output12[20];
+  char output13[20];
+  char output14[20];
+
   admin(945, 0, 75, 50, 2);
     
-  sprintf(buffRows, "VRSTICE:%d", rows);
-  writeText(buffRows, textColor);
+  sprintf(input1, "I1:%d", readVariableValue("I_1"));
+  writeText(input1, textColor);
+  render(300, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+  sprintf(input2, "I2:%d", readVariableValue("I_2"));
+  writeText(input2, textColor);
+  render(300, 150, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  sprintf(input3, "I3:%d", readVariableValue("I_3"));
+  writeText(input3, textColor);
+  render(300, 200, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+  sprintf(input4, "I4:%d", readVariableValue("I_4"));
+  writeText(input4, textColor);
+  render(300, 250, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  sprintf(input5, "I5:%d", readVariableValue("I_5"));
+  writeText(input5, textColor);
+  render(300, 300, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+  sprintf(input6, "I6:%d", readVariableValue("I_6"));
+  writeText(input6, textColor);
+  render(300, 350, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  sprintf(input7, "I7:%d", readVariableValue("I_7"));
+  writeText(input7, textColor);
+  render(300, 400, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+ 
+  sprintf(input8, "I8:%d", readVariableValue("I_8"));
+  writeText(input8, textColor);
+  render(300, 450, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  sprintf(input9, "I9:%d", readVariableValue("I_9"));
+  writeText(input9, textColor);
+  render(300, 500, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+  sprintf(input10, "I10:%d", readVariableValue("I_10"));
+  writeText(input10, textColor);
+  render(300, 550, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  sprintf(input11, "I11:%d", readVariableValue("I_11"));
+  writeText(input11, textColor);
+  render(300, 600, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+  sprintf(input12, "I12:%d", readVariableValue("I_12"));
+  writeText(input12, textColor);
+  render(300, 650, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  sprintf(input13, "I13:%d", readVariableValue("I_13"));
+  writeText(input13, textColor);
+  render(300, 700, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+  sprintf(input14, "I14:%d", readVariableValue("I_14"));
+  writeText(input14, textColor);
+  render(300, 750, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  sprintf(output1, "O1:%d", readVariableValue("O_1"));
+  writeText(output1, textColor);
   render(700, 100, NULL, 0.0, NULL, SDL_FLIP_NONE); 
     
-  sprintf(buffColumns, "STOLPCI:%d", columns);
-  writeText(buffColumns, textColor);
-  render(700, 200, NULL, 0.0, NULL, SDL_FLIP_NONE);
+  sprintf(output2, "O2:%d", readVariableValue("O_2"));
+  writeText(output2, textColor);
+  render(700, 150, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  sprintf(output3, "O3:%d", readVariableValue("O_3"));
+  writeText(output3, textColor);
+  render(700, 200, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+  sprintf(output4, "O4:%d", readVariableValue("O_4"));
+  writeText(output4, textColor);
+  render(700, 250, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  sprintf(output5, "O5:%d", readVariableValue("O_5"));
+  writeText(output5, textColor);
+  render(700, 300, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+  sprintf(output6, "O6:%d", readVariableValue("O_6"));
+  writeText(output6, textColor);
+  render(700, 350, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  sprintf(output7, "O7:%d", readVariableValue("O_7"));
+  writeText(output7, textColor);
+  render(700, 400, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+  sprintf(output8, "O8:%d", readVariableValue("O_8"));
+  writeText(output8, textColor);
+  render(700, 450, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  sprintf(output9, "O9:%d", readVariableValue("0_9"));
+  writeText(output9, textColor);
+  render(700, 500, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+  sprintf(output10, "O10:%d", readVariableValue("O_10"));
+  writeText(output10, textColor);
+  render(700, 550, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  sprintf(output11, "O11:%d", readVariableValue("O_11"));
+  writeText(output11, textColor);
+  render(700, 600, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+  sprintf(output12, "O12:%d", readVariableValue("O_12"));
+  writeText(output12, textColor);
+  render(700, 650, NULL, 0.0, NULL, SDL_FLIP_NONE);
+
+  sprintf(output13, "O13:%d", readVariableValue("O_13"));
+  writeText(output13, textColor);
+  render(700, 700, NULL, 0.0, NULL, SDL_FLIP_NONE); 
+    
+  sprintf(output14, "O14:%d", readVariableValue("O_14"));
+  writeText(output14, textColor);
+  render(700, 750, NULL, 0.0, NULL, SDL_FLIP_NONE);
 
 
-  plusRow();
-  minusRow();
-  plusColumn();
-  minusColumn();
 
-  button_save(650, 300, 300, 100);
+  //plusRow();
+  //minusRow();
+  //plusColumn();
+  //minusColumn();
+
+  //button_save(650, 300, 300, 100);
 
 
   SDL_RenderPresent(renderer);
@@ -1335,7 +1470,7 @@ void page_settings() //setting up settings page//
   cycleCounter++;
   oldtimestamp = timestamp;
 }
-*/
+
 void page_manual() /*setting up manual page*/
 {
   draw();
@@ -1350,7 +1485,6 @@ void page_manual() /*setting up manual page*/
   SDL_RenderClear(renderer);
   cycleCounter++;
   oldtimestamp = timestamp;
-  
 }
 
 void page_redirect()
@@ -1377,9 +1511,8 @@ void load_page(int pageNumber) /*handling loading pages */
       break;
 
     case 4:
-     /* page_settings();
+      page_settings();
       break;
-     */
     case 5:
       page_manual();
       break;
@@ -1422,9 +1555,9 @@ int main()
   pageNumber = 1;
   passText[0] = '\0';
   init();
-  /*comm_init();*/
+  comm_init();
   program = 1;
-  /*command(19);*/
+  command(19);
   
   /*home();*/
  

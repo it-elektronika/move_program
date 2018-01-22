@@ -20,7 +20,7 @@ int main(void)
 {
    int i = 50;
 
-   int fd = open("/dev/input/event2", O_WRONLY | O_NONBLOCK);
+   int fd = open("/dev/input/event0", O_WRONLY | O_NONBLOCK);
 
    /* enable mouse button left and relative events */
   /*
