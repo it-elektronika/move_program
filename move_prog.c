@@ -152,9 +152,9 @@ int comm_init()
   strcpy(str[6], "I00CY000550.000100000120011110001001*");    /* HOME Y */
   
   
-  strcpy(str[7], "I00CX002000.000000000020011110001001*");    /* HOME X - move off sensor */
+  strcpy(str[7], "I00CX010000.000000000020011110001001*");    /* HOME X - move off sensor */
 
-  strcpy(str[8], "I00CY002000.000000000020001110001001*");    /* HOME Y -  move off sensor*/
+  strcpy(str[8], "I00CY010000.000000000020001110001001*");    /* HOME Y -  move off sensor*/
 
   
   strcpy(str[9], "I00CX000500.000100000120001110001001*");    /* PARK X - to be defined */  
@@ -519,8 +519,8 @@ void home()                /*moving to home position */
   SDL_RenderPresent(renderer);
   SDL_RenderClear(renderer);
   
-  command(13);            /* enable x limit */
-  /*command(16);*/
+  command(15);
+  command(16);
   command(5);             /* x home move */
   command(11);            /* start x home move */
   
@@ -534,16 +534,13 @@ void home()                /*moving to home position */
       printf("X - triggered\n");
     }
   }
-  
-  usleep(200000);
-  command(15);   
-  /*usleep(1000000)*/;
+  command(19);
+  usleep(1000000);
   command(7);      /* x move off limit */
   command(11);     /* start x move off limit */ 
   usleep(1000000);
   
-  command(14);     /* enable y limit */
-  /* command(15);*/
+  
   command(6);      /* y home move */
   command(12);     /* start y home move */
   
@@ -557,9 +554,8 @@ void home()                /*moving to home position */
       printf("Y - limit triggered\n");
     }
   }
-  usleep(200000);    
-  command(16);     /* disable y-limit */
-  /*usleep(1000000);*/
+  command(19);
+  usleep(1000000);
   command(8);      /* y move off limit */
   command(12);     /* start y move off limit */
   /*usleep(1000000);*/
@@ -570,7 +566,6 @@ void home()                /*moving to home position */
   move_count = 0;
   SDL_RenderPresent(renderer);
   SDL_RenderClear(renderer);
-
 }
 
 void park_from_home()                /*movement to park position */
