@@ -527,7 +527,7 @@ void home()                /*moving to home position */
   int x_triggered = 0;
   int y_triggered = 0;
   
-  writeText("HOMING", textColor);
+  writeText("REF. POZICIJA", textColor);
   render(750, 300, NULL, 0.0, NULL, SDL_FLIP_NONE);
   SDL_RenderPresent(renderer);
   SDL_RenderClear(renderer);
@@ -1053,7 +1053,9 @@ int page_main()   /* setting up main page */
       writeText("STOP TOTAL", textColor);
       render(750, 100, NULL, 0.0, NULL, SDL_FLIP_NONE);
       writeVariableValue("O_3", 0);
+      writeVariableValue("O_5", 1);
     }
+       
     else if(readVariableValue("I_8") == 1)
     {
       writeText("SERVO REGUL.", textColor);
@@ -1074,12 +1076,12 @@ int page_main()   /* setting up main page */
     cycleCounter++;
     oldtimestamp = timestamp;
     
-    if(readVariableValue("I_2")==1)      /* read START button value */
+    if(readVariableValue("I_2") == 1 && readVariableValue("I_1") == 0)      /* read START button value */
     {
       start = 1;
     }
 
-    if(readVariableValue("I_4")==1)     /* read HOME button value */
+    if(readVariableValue("I_4")==1 && readVariableValue("I_1") == 0)     /* read HOME button value */
     {
       home();
     }
