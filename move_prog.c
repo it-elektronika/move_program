@@ -431,7 +431,7 @@ void detectFall()
 void handle_spring()
 {
   int stage = 1;
-  if(move_count != holes)
+  if(move_count < holes)
   {
     usleep(800000);
 
@@ -475,48 +475,51 @@ void handle_spring()
 
 void up()                     /*movement up */
 {
+  if(pageNumber != 5) 
+  {
+    handle_spring();
+  }
   curY++;	
   
   command(3);
   command(12);
+  
+}
+void down()                    /*movement down */
+{
   if(pageNumber != 5) 
   {
     handle_spring();
   }
-}
-void down()                    /*movement down */
-{
   curY--;	
   
   command(4);
   command(12);
-  if(pageNumber != 5) 
-  {
-    handle_spring();
-  }
  
 }
 void left()                    /*movement left */
 {
+  if(pageNumber != 5) 
+  {
+    handle_spring();
+  }
   curX--;	
 
   command(2);
   command(11);
+  
+}
+void right()                   /*movement right */
+{
   if(pageNumber != 5) 
   {
     handle_spring();
   }
-}
-void right()                   /*movement right */
-{
   curX++;
   
   command(1);
   command(11);
-  if(pageNumber != 5) 
-  {
-    handle_spring();
-  }
+  
 }
 
 void home()                /*moving to home position */
@@ -932,10 +935,10 @@ void ss_grid()/* start movement procedure for even value grid */
       writeVariableValue("O_5", 0);
     }
     
-    if(move_count==0 && !stop)
-    {
-      handle_spring();
-    }
+    //if(move_count==0 && !stop)
+    //{
+    //  handle_spring();
+    //}
 
     if(move_count < columns-1 && !stop)
     {
@@ -981,6 +984,7 @@ void ss_grid()/* start movement procedure for even value grid */
     {
       down();
     }
+    SDL_Delay(300);
   }
   
   if(!stop)
@@ -1009,7 +1013,7 @@ int page_main()   /* setting up main page */
     holes = rows * columns;
     drawEbGrid();
     
-    admin(945, 0, 75, 50, 2);
+    //admin(945, 0, 75, 50, 2);
     
     
     sprintf(buffCount, "N:%d", move_count);
@@ -1429,7 +1433,7 @@ int main()
   command(15);
   command(16);
   //command(21); 
-  /*home();*/
+  home();
  
   while(program == 1)
   {
