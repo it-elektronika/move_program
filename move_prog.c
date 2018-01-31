@@ -448,11 +448,12 @@ void handle_spring()
         stage = 2;
       }
     }
-
-    writeVariableValue("O_2", 1);
-    usleep(300000); 
-    writeVariableValue("O_1", 1);
-  
+    if(!stop)
+    {
+      writeVariableValue("O_2", 1);
+      usleep(300000); 
+      writeVariableValue("O_1", 1);
+    } 
   
     while(stage == 2)
     {
@@ -466,10 +467,13 @@ void handle_spring()
       {
         stage = 3;
       }
-    } 
-    usleep(500000);  
-    writeVariableValue("O_2", 0);
-    writeVariableValue("O_1", 0); 
+    }
+    if(!stop)
+    { 
+      usleep(500000);  
+      writeVariableValue("O_2", 0);
+      writeVariableValue("O_1", 0); 
+    }
   }
 }
 
@@ -479,11 +483,13 @@ void up()                     /*movement up */
   {
     handle_spring();
   }
-  curY++;	
+  if(!stop)
+  {
+    curY++;	
   
-  command(3);
-  command(12);
-  
+    command(3);
+    command(12);
+  }
 }
 void down()                    /*movement down */
 {
@@ -491,11 +497,13 @@ void down()                    /*movement down */
   {
     handle_spring();
   }
-  curY--;	
+  if(!stop)
+  {
+    curY--;	
   
-  command(4);
-  command(12);
- 
+    command(4);
+    command(12);
+  } 
 }
 void left()                    /*movement left */
 {
@@ -503,11 +511,13 @@ void left()                    /*movement left */
   {
     handle_spring();
   }
-  curX--;	
+  if(!stop)
+  {
+    curX--;	
 
-  command(2);
-  command(11);
-  
+    command(2);
+    command(11);
+  } 
 }
 void right()                   /*movement right */
 {
@@ -515,11 +525,13 @@ void right()                   /*movement right */
   {
     handle_spring();
   }
-  curX++;
+  if(!stop)
+  {
+    curX++;
   
-  command(1);
-  command(11);
-  
+    command(1);
+    command(11);
+  }
 }
 
 void home()                /*moving to home position */
@@ -1076,12 +1088,12 @@ int page_main()   /* setting up main page */
     cycleCounter++;
     oldtimestamp = timestamp;
     
-    if(readVariableValue("I_2") == 1 && readVariableValue("I_1") == 0)      /* read START button value */
+    if(readVariableValue("I_2") == 1 && readVariableValue("I_1") != 0)      /* read START button value */
     {
       start = 1;
     }
 
-    if(readVariableValue("I_4")==1 && readVariableValue("I_1") == 0)     /* read HOME button value */
+    if(readVariableValue("I_4")==1 && readVariableValue("I_1") != 0)     /* read HOME button value */
     {
       home();
     }
